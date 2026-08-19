@@ -378,6 +378,25 @@ function coinsSVG(list){
   return '<svg viewBox="0 0 '+Math.max(x,60)+' 54" class="pic">'+out+'</svg>';
 }
 
+/* ---------- flavour pools: the same maths, dressed differently ---------- */
+var PEOPLE  = ['Pia','Gus','Nour','Bram','Ada','Theo','Rosa','Kit','Mila','Otis','Suri','Finn','Wren','Jonah'];
+var BAKED   = ['tray of flapjack','iced cake','pizza','jam tart','fruit loaf','sheet of shortbread','chocolate log'];
+var COUNTED = [['buns','on the rack'],['cherries','in the bowl'],['iced biscuits','in the box'],
+               ['jam tarts','on the tray'],['bread rolls','in the basket'],['muffins','on the shelf'],
+               ['doughnuts','in the window'],['scones','cooling down'],['gingerbread men','on the counter']];
+var GOODS   = ['yoghurt','soup','olives','tomatoes','honey','pickles','beans','peaches','custard','jam'];
+var SHOPITEMS = ['loaf','melon','jar of jam','bag of apples','pot of honey','cabbage','box of eggs',
+                 'bunch of grapes','bag of carrots','pineapple','tub of butter','net of oranges','punnet of plums'];
+var PACKED  = ['eggs','bread rolls','apples','yoghurts','sausages','crumpets'];
+var CATS    = ['Mittens','Pepper','Biscuit','Domino','Sooty','Marmalade','Pickle','Hazel','Waffle','Clover'];
+var TREATS  = ['treats','crunchies','fish flakes','nibbles','cat biscuits','little fish'];
+var STATIONS= ['Bramford','Willow Bay','Hollytown','Marchmill','Kirkhaven','Elderford','Nettlebridge',
+               'Sandpiper','Larkfield','Duncragie','Ravensgate','Fernwick'];
+var CLOCKS  = ['station clock','kitchen clock','clock in the hall','school clock','clock on the tower'];
+
+function two2(n){ return String(n).padStart(2,'0'); }
+function personPair(r){ var a=pick(r,PEOPLE), b=pick(r,PEOPLE.filter(function(x){return x!==a;})); return [a,b]; }
+
 /* ============================================================
    THE SKILLS   —   gen(rng, L)  with L in {0,1,2}
    ============================================================ */
@@ -385,102 +404,182 @@ const SKILLS = [
 
 /* ---------------- 🥐 BAKERY ---------------- */
 { id:'bk1', shop:'bakery', name:'Naming fractions', gen:function(r,L){
-  var sets=[[2,3,4],[2,3,4,5,6,8],[3,5,6,8,10,12]];
+  var sets=[[2,3,4,5,6,8,10],[2,3,4,5,6,8,10,12],[3,5,6,7,8,9,10,12]];
   var parts = pick(r, sets[L]);
-  var sh = L===0 ? 1 : ri(r,1,parts-1);
+  var sh = (L===0 && r()<0.55) ? 1 : ri(r,1,parts-1);
   var g = gcd(sh,parts);
-  return { q:'Pia has iced part of this tray. What fraction is iced?',
-    svg: (L===2 && r()<0.5) ? pieSVG(parts,sh) : barSVG(parts, sh),
-    kind:'num', keys:'frac', ans: sh+'/'+parts,
-    alt: g>1 ? [(sh/g)+'/'+(parts/g)] : [],
-    hint:'Count ALL the pieces for the bottom number, then count the iced ones for the top.',
-    steps:['The tray is cut into '+parts+' equal pieces → bottom number is '+parts+'.',
-           sh+' of them are iced → top number is '+sh+'.',
+  var who = pick(r,PEOPLE), thing = pick(r,BAKED);
+  if(r()<0.45){
+    /* counted-objects wording, no picture to read */
+    var c = pick(r,COUNTED);
+    return { q: who+' iced '+sh+' of the '+parts+' '+c[0]+'. What fraction is that?',
+      kind:'num', keys:'frac', ans: sh+'/'+parts, alt: g>1 ? [(sh/g)+'/'+(parts/g)] : [],
+      hint:'The bottom number is how many there are altogether. The top number is how many are iced.',
+      steps:['There are '+parts+' altogether → bottom number is '+parts+'.',
+             sh+(sh===1?' is':' are')+' iced → top number is '+sh+'.',
+             'So the answer is '+sh+'/'+parts+'.'] };
+  }
+  var usePie = (parts<=8) && r()<0.4;
+  return { q: who+' has iced part of this '+thing+'. What fraction is shaded?',
+    svg: usePie ? pieSVG(parts,sh) : barSVG(parts, sh),
+    kind:'num', keys:'frac', ans: sh+'/'+parts, alt: g>1 ? [(sh/g)+'/'+(parts/g)] : [],
+    hint:'Count ALL the pieces for the bottom number, then count the shaded ones for the top.',
+    steps:['It is cut into '+parts+' equal pieces → bottom number is '+parts+'.',
+           sh+(sh===1?' is':' are')+' shaded → top number is '+sh+'.',
            'So the answer is '+sh+'/'+parts+'.'] };
 }},
 
 { id:'bk2', shop:'bakery', name:'Equivalent fractions', gen:function(r,L){
-  var a,b,k;
-  if(L===0){ b=pick(r,[2,3,4]); a=1; k=2; }
-  else if(L===1){ b=pick(r,[2,3,4,5]); a=pick(r,[1,1,2,3]); k=ri(r,2,4); }
+  var b,a,k;
+  if(L===0){ b=pick(r,[2,3,4,5,10]); a=ri(r,1,b-1); k=pick(r,[2,3]); }
+  else if(L===1){ b=pick(r,[2,3,4,5,6]); a=ri(r,1,b-1); k=ri(r,2,4); }
   else { b=pick(r,[3,4,5,6,8]); a=ri(r,1,b-1); k=ri(r,2,6); }
-  if(a>=b) a=1;
-  return { q:'Fill in the missing number:  '+a+'/'+b+'  =  ?/'+(b*k),
-    svg: barSVG(b, a, 260)+barSVG(b*k, a*k, 260, '#F2B33D'),
-    kind:'num', keys:'num', ans:String(a*k),
-    hint:'The bottom went from '+b+' to '+(b*k)+'. What did you multiply by? Do the same to the top.',
-    steps:[b+' × '+k+' = '+(b*k)+', so the bottom was multiplied by '+k+'.',
-           'Do the same on top: '+a+' × '+k+' = '+(a*k)+'.',
-           a+'/'+b+' = '+(a*k)+'/'+(b*k)] };
+  var pic = barSVG(b, a, 260)+barSVG(b*k, a*k, 260, '#F2B33D');
+  var shape = Math.floor(r()*3);
+  if(shape===0)
+    return { q:'Fill in the missing top number:  '+a+'/'+b+'  =  ?/'+(b*k), svg:pic,
+      kind:'num', keys:'num', ans:String(a*k),
+      hint:'The bottom went from '+b+' to '+(b*k)+'. What did you multiply by? Do the same to the top.',
+      steps:[b+' × '+k+' = '+(b*k)+', so the bottom was multiplied by '+k+'.',
+             'Do the same on top: '+a+' × '+k+' = '+(a*k)+'.', a+'/'+b+' = '+(a*k)+'/'+(b*k)] };
+  if(shape===1)
+    return { q:'Fill in the missing bottom number:  '+a+'/'+b+'  =  '+(a*k)+'/?', svg:pic,
+      kind:'num', keys:'num', ans:String(b*k),
+      hint:'The top went from '+a+' to '+(a*k)+'. What did you multiply by? Do the same underneath.',
+      steps:[a+' × '+k+' = '+(a*k)+', so the top was multiplied by '+k+'.',
+             'Do the same underneath: '+b+' × '+k+' = '+(b*k)+'.', a+'/'+b+' = '+(a*k)+'/'+(b*k)] };
+  var wrongs=[]; var tries=0;
+  while(wrongs.length<2 && tries++<30){
+    var wa=ri(r,1,b*k-1), cand=wa+'/'+(b*k);
+    if(Math.abs(wa/(b*k) - a/b) > 1e-9 && wrongs.indexOf(cand)<0) wrongs.push(cand);
+  }
+  return { q:'Which of these is the same as '+a+'/'+b+'?', svg: barSVG(b,a,260),
+    kind:'choice', opts: shuf(r,[(a*k)+'/'+(b*k)].concat(wrongs)), ans:(a*k)+'/'+(b*k),
+    hint:'Cut every piece into '+k+' — you get '+(b*k)+' pieces, and '+(a*k)+' of them are shaded.',
+    steps:[a+' × '+k+' = '+(a*k)+' and '+b+' × '+k+' = '+(b*k)+'.', 'So '+a+'/'+b+' = '+(a*k)+'/'+(b*k)+'.'] };
 }},
 
 { id:'bk3', shop:'bakery', name:'Fraction of an amount', gen:function(r,L){
-  var b, a, one;
-  if(L===0){ b=pick(r,[2,3,4]); a=1; one=ri(r,2,6); }
-  else if(L===1){ b=pick(r,[2,3,4,5,6]); a=ri(r,1,b-1); one=ri(r,3,10); }
+  var b,a,one;
+  if(L===0){ b=pick(r,[2,3,4,5,10]); a=(r()<0.6?1:ri(r,1,b-1)); one=ri(r,2,8); }
+  else if(L===1){ b=pick(r,[2,3,4,5,6,8]); a=ri(r,1,b-1); one=ri(r,3,10); }
   else { b=pick(r,[3,4,5,6,8,10]); a=ri(r,1,b-1); one=ri(r,4,15); }
   var total=one*b, ansv=one*a;
-  return { q:'There are '+total+' buns on the rack. How many is '+a+'/'+b+' of them?',
-    kind:'num', keys:'num', ans:String(ansv), unit:'buns',
-    hint:'First share the '+total+' buns into '+b+' equal groups. Then take '+a+' of those groups.',
+  var c=pick(r,COUNTED), who=pick(r,PEOPLE);
+  var shape=Math.floor(r()*3);
+  var base={ kind:'num', keys:'num', ans:String(ansv),
+    hint:'First share the '+total+' into '+b+' equal groups. Then take '+a+' of those groups.',
     steps:[total+' ÷ '+b+' = '+one+'  (that is 1/'+b+')',
            one+' × '+a+' = '+ansv+'  (that is '+a+'/'+b+')'] };
+  if(shape===0){ base.q='There are '+total+' '+c[0]+' '+c[1]+'. How many is '+a+'/'+b+' of them?'; base.unit=c[0]; }
+  else if(shape===1){ base.q='What is '+a+'/'+b+' of '+total+'?'; }
+  else { base.q=who+' has '+total+' '+c[0]+' and gives away '+a+'/'+b+' of them. How many is that?'; base.unit=c[0]; }
+  return base;
 }},
 
 { id:'bk4', shop:'bakery', name:'Comparing fractions', gen:function(r,L){
   var sets=[
-    [[1,2,1,4],[1,2,1,3],[1,3,1,4],[1,2,1,6],[1,4,1,8]],
-    [[3,4,2,3],[2,5,1,2],[5,8,1,2],[2,3,3,4],[1,4,3,8]],
-    [[3,5,7,10],[5,6,7,8],[4,7,3,5],[5,9,4,7],[7,12,5,8]]
+    [[1,2,1,4],[1,2,1,3],[1,3,1,4],[1,2,1,6],[1,4,1,8],[1,5,1,10],[1,2,1,10],[1,3,1,6],
+     [2,4,1,4],[3,4,1,4],[2,3,1,3],[3,5,1,5],[1,2,3,4],[2,5,4,5]],
+    [[3,4,2,3],[2,5,1,2],[5,8,1,2],[2,3,3,4],[1,4,3,8],[3,10,1,4],[5,6,3,4],[2,6,1,4]],
+    [[3,5,7,10],[5,6,7,8],[4,7,3,5],[5,9,4,7],[7,12,5,8],[5,12,3,8],[7,9,4,5]]
   ];
   var p=pick(r,sets[L]); if(r()<0.5) p=[p[2],p[3],p[0],p[1]];
   var v1=p[0]/p[1], v2=p[2]/p[3];
-  var big = v1>v2 ? p[0]+'/'+p[1] : p[2]+'/'+p[3];
-  return { q:'Which slice is bigger?',
+  var f1=p[0]+'/'+p[1], f2=p[2]+'/'+p[3];
+  var bigger = v1>v2 ? f1 : f2, smaller = v1>v2 ? f2 : f1;
+  var askBig = r()<0.5;
+  var thing = pick(r,BAKED);
+  return { q: askBig ? ('Which piece of '+thing+' is bigger?') : ('Which piece of '+thing+' is smaller?'),
     svg: L<2 ? (barSVG(p[1],p[0],260)+barSVG(p[3],p[2],260,'#6FB98F')) : '',
-    kind:'choice', opts: shuf(r,[p[0]+'/'+p[1], p[2]+'/'+p[3]]), ans:big,
+    kind:'choice', opts: shuf(r,[f1,f2]), ans: askBig ? bigger : smaller,
     hint: L<2 ? 'Look at the two bars. Which one has more colour in it?'
-              : 'Try turning both into the same kind of piece, or compare each with a half.',
-    steps:[p[0]+'/'+p[1]+' = '+(Math.round(v1*100))+'%',
-           p[2]+'/'+p[3]+' = '+(Math.round(v2*100))+'%',
-           'So '+big+' is bigger.'] };
+              : 'Try comparing each one with a half.',
+    steps:[f1+' = '+(Math.round(v1*100))+'%', f2+' = '+(Math.round(v2*100))+'%',
+           'So '+(askBig?bigger:smaller)+' is the '+(askBig?'bigger':'smaller')+' one.'] };
 }},
 
 { id:'bk5', shop:'bakery', name:'Adding fractions', gen:function(r,L){
-  var b = pick(r, [[4,5],[4,5,6,8],[5,6,8,10,12]][L]);
-  var a = ri(r,1,b-2), c;
-  if(L===0){ c = ri(r,1,Math.max(1,b-a-1)); }
-  else { c = ri(r,1,b-a); }
-  var s=a+c, g=gcd(s,b);
-  var whole=(s===b);
-  var simp = whole ? ' — that is the whole tart!' : (g>1 ? (' = '+(s/g)+'/'+(b/g)) : '');
-  var alts = whole ? ['1'] : (g>1 ? [(s/g)+'/'+(b/g)] : []);
-  return { q:'Pia eats '+a+'/'+b+' of a tart, then '+c+'/'+b+' more. How much has she eaten altogether?',
+  var b = pick(r, [[3,4,5,6,8,10],[4,5,6,8,10],[5,6,8,10,12]][L]);
+  var who=pick(r,PEOPLE), thing=pick(r,BAKED);
+  if(r()<0.4){
+    /* take-away shape: how much is left */
+    var eaten=ri(r,1,b-1), left=b-eaten, g2=gcd(left,b);
+    return { q:'A '+thing+' is cut into '+b+' equal pieces. '+who+' eats '+eaten+' of them. What fraction is left?',
+      svg: barSVG(b, eaten, 260),
+      kind:'num', keys:'frac', ans:left+'/'+b, alt: g2>1?[(left/g2)+'/'+(b/g2)]:[],
+      hint:'All '+b+' pieces together make the whole. Take away the '+eaten+' that were eaten.',
+      steps:['The whole is '+b+'/'+b+'.', b+' − '+eaten+' = '+left, 'So '+left+'/'+b+' is left.'] };
+  }
+  var a=ri(r,1,b-2), c=ri(r,1,b-a);
+  var s=a+c, g=gcd(s,b), whole=(s===b);
+  var simp = whole ? ' — that is the whole '+thing+'!' : (g>1 ? (' = '+(s/g)+'/'+(b/g)) : '');
+  return { q:who+' eats '+a+'/'+b+' of a '+thing+', then '+c+'/'+b+' more. How much has '+who+' eaten altogether?',
     svg: L<2 ? (barSVG(b, a, 260)+barSVG(b, c, 260, '#F2B33D')) : '',
-    kind:'num', keys:'frac', ans:s+'/'+b, alt: alts,
+    kind:'num', keys:'frac', ans:s+'/'+b, alt: whole ? ['1'] : (g>1 ? [(s/g)+'/'+(b/g)] : []),
     hint:'The pieces are the same size, so just add the top numbers. The bottom stays '+b+'.',
     steps:['Bottom numbers match, so keep '+b+'.', a+' + '+c+' = '+s, 'Answer: '+s+'/'+b+simp] };
 }},
 
-{ id:'bk6', shop:'bakery', name:'Fractions to decimals', gen:function(r,L){
+{ id:'bk6', shop:'bakery', name:'Fractions and decimals', gen:function(r,L){
   var sets=[
-    [['1/2','0.5'],['1/10','0.1'],['5/10','0.5'],['1/4','0.25'],['2/10','0.2']],
-    [['3/4','0.75'],['3/10','0.3'],['7/10','0.7'],['1/5','0.2'],['2/5','0.4']],
-    [['3/5','0.6'],['4/5','0.8'],['1/100','0.01'],['25/100','0.25'],['9/100','0.09'],['1/8','0.125']]
+    [['1/2','0.5'],['1/10','0.1'],['2/10','0.2'],['3/10','0.3'],['4/10','0.4'],['5/10','0.5'],
+     ['6/10','0.6'],['7/10','0.7'],['8/10','0.8'],['9/10','0.9'],['1/4','0.25'],['10/10','1']],
+    [['3/4','0.75'],['1/5','0.2'],['2/5','0.4'],['3/5','0.6'],['4/5','0.8'],['1/2','0.5'],
+     ['1/4','0.25'],['7/10','0.7'],['3/10','0.3']],
+    [['1/100','0.01'],['25/100','0.25'],['9/100','0.09'],['1/8','0.125'],['3/8','0.375'],
+     ['7/100','0.07'],['50/100','0.5'],['75/100','0.75']]
   ];
   var p=pick(r,sets[L]);
+  if(L===0 && r()<0.3){
+    var t10 = ri(r,1,9);
+    return { q:'What decimal is shaded here?',
+      svg: barSVG(10, t10, 280, '#6FB98F'),
+      kind:'num', keys:'dec', ans:(t10/10).toFixed(1),
+      hint:'The bar is in 10 equal parts, so each one is 0.1.',
+      steps:[t10+' parts out of 10 is '+t10+'/10.', 'As a decimal that is '+(t10/10).toFixed(1)+'.'] };
+  }
+  if(r()<0.4){
+    /* the other direction, as a choice so there is one right answer */
+    var wrongs=[], guard=0;
+    while(wrongs.length<2 && guard++<40){
+      var q2=pick(r,sets[L]);
+      if(q2[1]!==p[1] && wrongs.indexOf(q2[0])<0) wrongs.push(q2[0]);
+    }
+    return { q:'Which fraction is the same as '+p[1]+'?',
+      kind:'choice', opts:shuf(r,[p[0]].concat(wrongs)), ans:p[0],
+      hint:'One tenth is 0.1, one half is 0.5, one quarter is 0.25.',
+      steps:[p[1]+' is the same as '+p[0]+'.'] };
+  }
   return { q:'Write '+p[0]+' as a decimal.', kind:'num', keys:'dec', ans:p[1],
-    hint:'A decimal is just "how much out of one". Think about tenths and hundredths.',
+    hint:'A decimal is just "how much out of one". Think about tenths.',
     steps:[p[0]+' means '+p[0].split('/')[0]+' out of '+p[0].split('/')[1]+'.',
            'As a decimal that is '+p[1]+'.'] };
 }},
 
-{ id:'bk7', shop:'bakery', name:'Fractions to percentages', gen:function(r,L){
+{ id:'bk7', shop:'bakery', name:'Percentages', gen:function(r,L){
   var sets=[
-    [['1/2',50],['1/4',25],['1/1',100],['3/4',75]],
-    [['1/10',10],['3/10',30],['9/10',90],['5/10',50],['7/10',70]],
-    [['1/5',20],['2/5',40],['3/5',60],['4/5',80],['1/20',5],['3/20',15]]
+    [['1/2',50],['1/4',25],['10/10',100],['3/4',75],['1/10',10],['5/10',50],['2/10',20]],
+    [['3/10',30],['9/10',90],['7/10',70],['4/10',40],['6/10',60],['8/10',80],['1/5',20]],
+    [['1/5',20],['2/5',40],['3/5',60],['4/5',80],['1/20',5],['3/20',15],['1/8',12.5]]
   ];
+  if(r()<0.3){
+    /* out of ten, in words — plenty of contexts */
+    var k10 = ri(r,1,9), c7 = pick(r,COUNTED), who7 = pick(r,PEOPLE);
+    return { q: who7+' iced '+k10+' of the 10 '+c7[0]+'. What percentage is that?',
+      kind:'num', keys:'num', ans:String(k10*10), unit:'%',
+      hint:'Out of 10 means each one is worth 10%.',
+      steps:['Each of the 10 is 10%.', k10+' × 10% = '+(k10*10)+'%'] };
+  }
+  if(r()<0.5){
+    /* read a percentage straight off a picture */
+    var tenths = L===0 ? pick(r,[1,2,3,4,5,6,7,8,9,10]) : ri(r,1,10);
+    return { q:'What percentage of this bar is coloured?',
+      svg: barSVG(10, tenths, 280, '#8D6BA0'),
+      kind:'num', keys:'num', ans:String(tenths*10), unit:'%',
+      hint:'The bar is split into 10 equal parts, so each part is 10%.',
+      steps:['Each of the 10 parts is 10%.', tenths+' parts × 10% = '+(tenths*10)+'%'] };
+  }
   var p=pick(r,sets[L]);
   return { q:'What is '+p[0]+' as a percentage?', kind:'num', keys:'num', ans:String(p[1]), unit:'%',
     svg: barSVG(10, Math.round(p[1]/10), 280, '#8D6BA0'),
@@ -489,124 +588,163 @@ const SKILLS = [
 }},
 
 { id:'bk8', shop:'bakery', name:'Percentage of an amount', gen:function(r,L){
-  var pc = pick(r, [[50,10],[25,20,50],[75,5,20,25]][L]);
-  var n  = pick(r, [[20,40,60,80,100],[20,40,80,120,200],[60,120,200,240,300,400]][L]);
+  var pc = pick(r, [[50,10,100],[25,20,50,10],[75,5,20,25,40]][L]);
+  var n  = pick(r, [[10,20,30,40,50,60,70,80,90,100],[20,40,60,80,120,140,200],[60,120,160,200,240,300,400]][L]);
   var ansv = n*pc/100;
   if(!Number.isInteger(ansv)){ n=200; ansv=n*pc/100; }
-  return { q:'A tray of '+n+' biscuits. How many is '+pc+'%?',
-    kind:'num', keys:'num', ans:String(ansv), unit:'biscuits',
-    hint: pc===50 ? 'Half of them.' : '10% is just the amount ÷ 10. Build up from there.',
-    steps:['10% of '+n+' = '+(n/10),
-           pc+'% is '+(pc/10)+' lots of 10%.',
-           (n/10)+' × '+(pc/10)+' = '+ansv] };
+  var c=pick(r,COUNTED), who=pick(r,PEOPLE);
+  var shape=Math.floor(r()*3);
+  var base={ kind:'num', keys:'num', ans:String(ansv),
+    hint: pc===50 ? 'Half of them.' : (pc===100 ? 'All of them!' : '10% is just the amount ÷ 10. Build up from there.'),
+    steps:['10% of '+n+' = '+(n/10), pc+'% is '+(pc/10)+' lots of 10%.', (n/10)+' × '+(pc/10)+' = '+ansv] };
+  if(shape===0){ base.q='A tray of '+n+' '+c[0]+'. How many is '+pc+'%?'; base.unit=c[0]; }
+  else if(shape===1){ base.q='What is '+pc+'% of '+n+'?'; }
+  else { base.q=who+' sold '+pc+'% of the '+n+' '+c[0]+'. How many is that?'; base.unit=c[0]; }
+  return base;
 }},
 
 /* ---------------- 🛒 MARKET ---------------- */
 { id:'mk1', shop:'market', name:'Adding money', gen:function(r,L){
-  var a,b, item1=pick(r,['loaf','melon','jar of jam','bag of apples']),
-           item2=pick(r,['pot of honey','cabbage','box of eggs','bunch of grapes']);
+  var i1=pick(r,SHOPITEMS), i2=pick(r,SHOPITEMS.filter(function(x){return x!==i1;}));
   if(L===0){
-    /* First Level works in pence for amounts under a pound */
-    a=ri(r,2,9)*5; b=ri(r,2,9)*5;
-    return { q:'Gus sells a '+item1+' for '+a+'p and a '+item2+' for '+b+'p. How much altogether?',
-      svg: coinsSVG([a,b]),
-      kind:'num', keys:'num', ans:String(a+b), unit:'p',
+    var a=ri(r,2,17)*5, b=ri(r,2,17)*5;
+    if(r()<0.3){
+      var c=ri(r,1,8)*5, i3=pick(r,SHOPITEMS.filter(function(x){return x!==i1&&x!==i2;}));
+      return { q:'A '+i1+' is '+a+'p, a '+i2+' is '+b+'p and a '+i3+' is '+c+'p. How much altogether?',
+        svg: coinsSVG([a,b,c]), kind:'num', keys:'num', ans:String(a+b+c), unit:'p',
+        hint:'Add two of them first, then add the last one on.',
+        steps:[a+' + '+b+' = '+(a+b), (a+b)+' + '+c+' = '+(a+b+c), 'Total = '+(a+b+c)+'p'] };
+    }
+    return { q:pick(r,PEOPLE)+' buys a '+i1+' for '+a+'p and a '+i2+' for '+b+'p. How much altogether?',
+      svg: coinsSVG([a,b]), kind:'num', keys:'num', ans:String(a+b), unit:'p',
       hint:'Count on from '+a+' in tens, then the last few.',
       steps:[a+'p + '+b+'p', a+' + '+b+' = '+(a+b), 'Total = '+(a+b)+'p'] };
   }
-  if(L===1){ a=ri(r,45,450); b=ri(r,45,450); }
-  else { a=ri(r,120,1400); b=ri(r,120,1400); }
-  return { q:'Gus sells a '+item1+' for '+pounds(a)+' and a '+item2+' for '+pounds(b)+'. How much altogether?',
-    kind:'num', keys:'dec', ans:((a+b)/100).toFixed(2), unit:'£',
+  var x = L===1 ? ri(r,45,450) : ri(r,120,1400);
+  var y = L===1 ? ri(r,45,450) : ri(r,120,1400);
+  return { q:'Gus sells a '+i1+' for '+pounds(x)+' and a '+i2+' for '+pounds(y)+'. How much altogether?',
+    kind:'num', keys:'dec', ans:((x+y)/100).toFixed(2), unit:'£',
     hint:'Line up the pounds with the pounds and the pence with the pence.',
-    steps:[pounds(a)+' + '+pounds(b),
-           'Pence: '+(a%100)+' + '+(b%100)+' = '+((a%100)+(b%100)),
-           'Total = '+pounds(a+b)] };
+    steps:[pounds(x)+' + '+pounds(y), 'Pence: '+(x%100)+' + '+(y%100)+' = '+((x%100)+(y%100)),
+           'Total = '+pounds(x+y)] };
 }},
 
 { id:'mk2', shop:'market', name:'Giving change', gen:function(r,L){
+  var who=pick(r,PEOPLE), item=pick(r,SHOPITEMS);
   var paid, cost;
-  if(L===0){ paid=pick(r,[100,200]); cost=ri(r,3,(paid/10)-2)*10; }
+  if(L===0){ paid=pick(r,[100,200,500]); cost=ri(r,3,(paid/5)-2)*5; }
   else if(L===1){ paid=pick(r,[500,1000]); cost=ri(r,Math.floor(paid*0.3), paid-25); }
   else { paid=pick(r,[1000,2000]); cost=ri(r,Math.floor(paid*0.25), paid-15); }
-  return { q:'The shopping comes to '+pounds(cost)+'. Isabel Leyla pays with '+pounds(paid)+
-             '. How much change?',
-    kind:'num', keys:'dec', ans:((paid-cost)/100).toFixed(2), unit:'£',
-    hint:'Count up from '+pounds(cost)+' to '+pounds(paid)+' — that is easier than taking away.',
-    steps:['Count up to the next pound: '+pounds(cost)+' → '+pounds(Math.ceil(cost/100)*100)+' is '+
+  var change=paid-cost;
+  var body = { kind:'num', keys: L===0?'num':'dec',
+    ans: L===0 ? String(change) : (change/100).toFixed(2), unit: L===0?'p':'£',
+    hint:'Count up from '+pence(cost)+' to '+pence(paid)+' — that is easier than taking away.',
+    steps:['Count up to the next pound: '+pence(cost)+' → '+pence(Math.ceil(cost/100)*100)+' is '+
              pence(Math.ceil(cost/100)*100-cost),
-           'Then up to '+pounds(paid)+': '+pounds(paid-Math.ceil(cost/100)*100),
-           'Change = '+pounds(paid-cost)] };
+           'Then up to '+pence(paid)+': '+pence(paid-Math.ceil(cost/100)*100),
+           'Change = '+pence(change)] };
+  if(r()<0.5) body.q='The shopping comes to '+pence(cost)+'. '+who+' pays with '+pence(paid)+'. How much change?';
+  else body.q=who+' has '+pence(paid)+' and buys a '+item+' for '+pence(cost)+'. How much is left over?';
+  return body;
 }},
 
 { id:'mk3', shop:'market', name:'Multiplying money', gen:function(r,L){
-  var each = pick(r, [[10,20,50,5],[35,45,60,75,80],[99,125,150,199,225,250]][L]);
-  var n = L===0 ? ri(r,2,5) : ri(r,3,8);
-  return { q:n+' pots of '+pick(r,['yoghurt','soup','olives','tomatoes'])+' at '+pence(each)+' each. What is the total?',
-    kind:'num', keys:'dec', ans:((each*n)/100).toFixed(2), unit:'£',
-    hint:'Multiply the pence first, then turn the answer back into pounds.',
-    steps:[each+'p × '+n+' = '+(each*n)+'p', (each*n)+'p = '+pounds(each*n)] };
+  var each = pick(r, [[5,10,20,25,50],[35,45,60,75,80],[99,125,150,199,225,250]][L]);
+  var n = L===0 ? ri(r,2,6) : ri(r,3,8);
+  var g = pick(r,GOODS);
+  var body = { kind:'num', keys: L===0?'num':'dec',
+    ans: L===0 ? String(each*n) : ((each*n)/100).toFixed(2), unit: L===0?'p':'£',
+    hint:'Count in '+each+'s, '+n+' times.',
+    steps:[each+'p × '+n+' = '+(each*n)+'p', (each*n)+'p = '+pence(each*n)] };
+  if(r()<0.5) body.q=n+' pots of '+g+' at '+pence(each)+' each. What is the total?';
+  else body.q='One pot of '+g+' costs '+pence(each)+'. How much for '+n+' pots?';
+  return body;
 }},
 
 { id:'mk4', shop:'market', name:'Sharing the cost', gen:function(r,L){
-  var n = pick(r, [[2,3,4],[2,3,4,5],[3,4,5,6,8]][L]);
-  var each = pick(r, [[50,100,150,200],[45,60,80,125,150],[125,240,320,175,225]][L]);
-  var total=each*n;
-  return { q:n+' friends share a '+pounds(total)+' fruit box equally. How much does each pay?',
-    kind:'num', keys:'dec', ans:(each/100).toFixed(2), unit:'£',
-    hint:'Divide the total by '+n+'. Try dividing the pence: '+total+'p ÷ '+n+'.',
-    steps:[total+'p ÷ '+n+' = '+each+'p', each+'p = '+pounds(each)] };
+  var n = pick(r, [[2,3,4,5],[2,3,4,5,6],[3,4,5,6,8]][L]);
+  var each = pick(r, [[10,15,20,25,30,40,50,60,75,80,90,100],[45,60,80,125,150,175],[125,240,320,175,225,150]][L]);
+  var total=each*n, who=pick(r,PEOPLE), item=pick(r,SHOPITEMS);
+  var body = { kind:'num', keys: L===0?'num':'dec',
+    ans: L===0 ? String(each) : (each/100).toFixed(2), unit: L===0?'p':'£',
+    hint:'Divide the total by '+n+'.',
+    steps:[total+'p ÷ '+n+' = '+each+'p', each+'p = '+pence(each)] };
+  if(r()<0.5) body.q=n+' friends share a '+pence(total)+' '+item+' equally. How much does each pay?';
+  else body.q=pence(total)+' is shared equally between '+n+' children. How much does each one get?';
+  return body;
 }},
 
 { id:'mk5', shop:'market', name:'Best value', gen:function(r,L){
-  var unitA, nA, unitB, nB;
-  if(L===0){ nA=nB=pick(r,[2,3,4]); unitA=pick(r,[20,30,40,50]); unitB=unitA+pick(r,[-10,10]); }
-  else if(L===1){ nA=pick(r,[2,4]); nB=nA*2; unitA=pick(r,[40,50,60]); unitB=unitA+pick(r,[-10,-5,5,10]); }
-  else { nA=pick(r,[2,3,4]); nB=pick(r,[5,6]); unitA=pick(r,[40,50,60,75,80]); unitB=unitA+pick(r,[-12,-8,-6,6,8,12]); }
+  var thing=pick(r,PACKED);
+  var unitA, nA, unitB, nB, guard=0;
+  do{
+    if(L===0){ nA=pick(r,[2,3,4,5]); nB=nA; unitA=pick(r,[10,15,20,25,30,40,50]); unitB=unitA+pick(r,[-10,-5,5,10]); }
+    else if(L===1){ nA=pick(r,[2,3,4]); nB=nA*2; unitA=pick(r,[20,30,40,50,60]); unitB=unitA+pick(r,[-10,-5,5,10]); }
+    else { nA=pick(r,[2,3,4]); nB=pick(r,[5,6,8]); unitA=pick(r,[40,50,60,75,80]); unitB=unitA+pick(r,[-12,-8,-6,6,8,12]); }
+  } while(guard++<30 && (unitA===unitB || unitB<=0 || (nA===nB && unitA*nA===unitB*nB)));
   if(unitA===unitB) unitB=unitA+5;
   var pa=unitA*nA, pb=unitB*nB;
-  var best = unitA<unitB ? (nA+' for '+pence(pa)) : (nB+' for '+pence(pb));
-  var labelA = nA+' for '+pence(pa), labelB = nB+' for '+pence(pb);
-  if(labelA===labelB) { nB = nA+1; pb = unitB*nB; labelB = nB+' for '+pence(pb);
-                        best = unitA<unitB ? labelA : labelB; }
-  return { q:'Which pack of eggs is better value?',
-    kind:'choice', opts: shuf(r,[labelA, labelB]), ans:best,
-    hint:'Work out what ONE egg costs in each pack, then compare.',
-    steps:[pence(pa)+' ÷ '+nA+' = '+unitA+'p each',
-           pence(pb)+' ÷ '+nB+' = '+unitB+'p each',
+  var labelA=nA+' for '+pence(pa), labelB=nB+' for '+pence(pb);
+  if(labelA===labelB){ nB=nA+1; pb=unitB*nB; labelB=nB+' for '+pence(pb); }
+  var best = unitA<unitB ? labelA : labelB;
+  return { q:'Which pack of '+thing+' is better value?',
+    kind:'choice', opts: shuf(r,[labelA,labelB]), ans:best,
+    hint:'Work out what ONE costs in each pack, then compare.',
+    steps:[pence(pa)+' ÷ '+nA+' = '+unitA+'p each', pence(pb)+' ÷ '+nB+' = '+unitB+'p each',
            'So '+best+' is better value.'] };
 }},
 
-{ id:'mk6', shop:'market', name:'Column addition', gen:function(r,L){
+{ id:'mk6', shop:'market', name:'Adding and taking away', gen:function(r,L){
   var a,b;
-  if(L===0){ a=ri(r,120,480); b=ri(r,110,470); }          // stays under 1000
+  if(L===0){ a=ri(r,120,890); b=ri(r,105,860); }
   else if(L===1){ a=ri(r,240,899); b=ri(r,240,899); }
   else { a=ri(r,1200,9800); b=ri(r,1200,9800); }
+  if(r()<0.45){
+    var big=Math.max(a,b), small=Math.min(a,b);
+    if(big===small) small=Math.max(1,small-13);
+    return { q:'Take these away:  '+big+' − '+small,
+      kind:'num', keys:'num', ans:String(big-small),
+      hint:'Start with the ones column on the right, and borrow from next door if you need to.',
+      steps:['Ones: '+(big%10)+' − '+(small%10), 'Then tens, then hundreds.', big+' − '+small+' = '+(big-small)] };
+  }
+  if(L===0 && a+b>1000) b = Math.max(105, 1000-a);
   return { q:'Add these:  '+a+' + '+b,
     kind:'num', keys:'num', ans:String(a+b),
     hint:'Start with the ones column on the right and carry over as you go.',
     steps:['Ones: '+(a%10)+' + '+(b%10),
-           'Then tens, hundreds' + (L===2?', thousands':'') + ' — carrying each time.',
-           a+' + '+b+' = '+(a+b)] };
+           'Then tens, hundreds'+(L===2?', thousands':'')+' — carrying each time.', a+' + '+b+' = '+(a+b)] };
 }},
 
 { id:'mk7', shop:'market', name:'Two-step problems', gen:function(r,L){
-  var each = pick(r, [[20,25,50],[85,120,150],[150,199,250]][L]);
-  var n = L===0 ? ri(r,2,4) : ri(r,3,6);
-  var paid = L===0 ? pick(r,[200,500]) : pick(r,[1000,2000]);
+  var who=pick(r,PEOPLE), item=pick(r,SHOPITEMS), item2=pick(r,SHOPITEMS.filter(function(x){return x!==item;}));
+  var each = pick(r, [[10,15,20,25,30,50],[85,120,150],[150,199,250]][L]);
+  var n = L===0 ? ri(r,2,5) : ri(r,3,6);
+  if(r()<0.5){
+    var other = L===0 ? ri(r,3,15)*5 : ri(r,60,400);
+    var tot = each*n + other;
+    return { q:who+' buys '+n+' '+item+'s at '+pence(each)+' each and one '+item2+' for '+pence(other)+
+               '. How much altogether?',
+      kind:'num', keys: L===0?'num':'dec',
+      ans: L===0 ? String(tot) : (tot/100).toFixed(2), unit: L===0?'p':'£',
+      hint:'Two steps: the cost of the '+item+'s first, then add the '+item2+'.',
+      steps:['Step 1: '+each+'p × '+n+' = '+pence(each*n),
+             'Step 2: '+pence(each*n)+' + '+pence(other)+' = '+pence(tot)] };
+  }
+  var paid = L===0 ? pick(r,[200,500,1000]) : pick(r,[1000,2000]);
   var total=each*n;
-  while(total>=paid){ n--; total=each*n; }
-  return { q:'Gus buys '+n+' baskets at '+pence(each)+' each and pays with '+pounds(paid)+
-             '. How much change does he get?',
-    kind:'num', keys:'dec', ans:((paid-total)/100).toFixed(2), unit:'£',
+  while(total>=paid && n>1){ n--; total=each*n; }
+  return { q:who+' buys '+n+' baskets at '+pence(each)+' each and pays with '+pence(paid)+
+             '. How much change?',
+    kind:'num', keys: L===0?'num':'dec',
+    ans: L===0 ? String(paid-total) : ((paid-total)/100).toFixed(2), unit: L===0?'p':'£',
     hint:'Two steps: first the total cost, then the change.',
-    steps:['Step 1: '+each+'p × '+n+' = '+pounds(total),
-           'Step 2: '+pounds(paid)+' − '+pounds(total)+' = '+pounds(paid-total)] };
+    steps:['Step 1: '+each+'p × '+n+' = '+pence(total),
+           'Step 2: '+pence(paid)+' − '+pence(total)+' = '+pence(paid-total)] };
 }},
 
 { id:'mk8', shop:'market', name:'Rounding & estimating', gen:function(r,L){
   var a, to;
-  if(L===0){ to=10; a=ri(r,23,398); }
+  if(L===0){ to=pick(r,[10,10,100]); a=ri(r,23,980); }
   else if(L===1){ to=pick(r,[10,100]); a=ri(r,145,985); }
   else { to=pick(r,[10,100,1000]); a=ri(r,1150,8850); }
   var ansv = Math.round(a/to)*to;
@@ -620,67 +758,102 @@ const SKILLS = [
 
 /* ---------------- 🐾 CAT CAFÉ ---------------- */
 { id:'cf1', shop:'cafe', name:'Times tables', gen:function(r,L){
-  var tables = [[2,5,10,3,4],[2,3,4,5,6,7,8,9,10],[3,4,6,7,8,9,11,12]][L];
-  var a=pick(r,tables), b = L===0 ? ri(r,2,10) : (L===1 ? ri(r,2,10) : ri(r,2,12));
-  return { q:'Nour needs '+a+' bowls with '+b+' treats in each. How many treats?',
-    svg: (a<=8&&b<=8) ? arraySVG(a,b) : '',
-    kind:'num', keys:'num', ans:String(a*b), unit:'treats',
-    hint:'Count in '+b+'s, '+a+' times — or use a fact you already know and build on it.',
-    steps:[a+' × '+b+' = '+(a*b)] };
+  var tables = [[2,3,4,5,10],[2,3,4,5,6,7,8,9,10],[3,4,6,7,8,9,11,12]][L];
+  var a=pick(r,tables), b = L===2 ? ri(r,2,12) : ri(r,2,10);
+  var cat=pick(r,CATS), tr=pick(r,TREATS);
+  var shape=Math.floor(r()*3);
+  if(shape===0)
+    return { q:'Nour fills '+a+' bowls with '+b+' '+tr+' in each. How many '+tr+' is that?',
+      svg: (a<=8&&b<=8) ? arraySVG(a,b) : '',
+      kind:'num', keys:'num', ans:String(a*b), unit:tr,
+      hint:'Count in '+b+'s, '+a+' times — or use a fact you already know and build on it.',
+      steps:[a+' × '+b+' = '+(a*b)] };
+  if(shape===1)
+    return { q:'What is '+a+' × '+b+'?',
+      svg: (a<=8&&b<=8) ? arraySVG(a,b) : '',
+      kind:'num', keys:'num', ans:String(a*b),
+      hint:'Count in '+b+'s, '+a+' times.', steps:[a+' × '+b+' = '+(a*b)] };
+  return { q:cat+' eats '+b+' '+tr+' a day. How many in '+a+' days?',
+    kind:'num', keys:'num', ans:String(a*b), unit:tr,
+    hint:'That is '+a+' lots of '+b+'.', steps:[a+' × '+b+' = '+(a*b)] };
 }},
 
 { id:'cf2', shop:'cafe', name:'Division facts', gen:function(r,L){
-  var tables=[[2,5,10],[2,3,4,5,6,8,10],[3,4,6,7,8,9,12]][L];
-  var b=pick(r,tables), q = L===0 ? ri(r,2,10) : ri(r,2,12), a=b*q;
-  return { q:a+' cat treats shared equally into '+b+' bowls. How many in each bowl?',
-    kind:'num', keys:'num', ans:String(q), unit:'each',
-    hint:'Ask yourself: '+b+' times what makes '+a+'?',
-    steps:[b+' × '+q+' = '+a, 'So '+a+' ÷ '+b+' = '+q] };
+  var tables=[[2,3,4,5,10],[2,3,4,5,6,8,10],[3,4,6,7,8,9,12]][L];
+  var b=pick(r,tables), q = L===2 ? ri(r,2,12) : ri(r,2,10), a=b*q;
+  var tr=pick(r,TREATS);
+  var shape=Math.floor(r()*3);
+  if(shape===0)
+    return { q:a+' '+tr+' shared equally into '+b+' bowls. How many in each bowl?',
+      kind:'num', keys:'num', ans:String(q), unit:'each',
+      hint:'Ask yourself: '+b+' times what makes '+a+'?', steps:[b+' × '+q+' = '+a, 'So '+a+' ÷ '+b+' = '+q] };
+  if(shape===1)
+    return { q:'What is '+a+' ÷ '+b+'?',
+      kind:'num', keys:'num', ans:String(q),
+      hint:'Ask yourself: '+b+' times what makes '+a+'?', steps:[b+' × '+q+' = '+a, 'So '+a+' ÷ '+b+' = '+q] };
+  return { q:'How many bowls of '+b+' '+tr+' can Nour fill from '+a+' '+tr+'?',
+    kind:'num', keys:'num', ans:String(q), unit:'bowls',
+    hint:'How many '+b+'s fit into '+a+'?', steps:[b+' × '+q+' = '+a, 'So '+a+' ÷ '+b+' = '+q] };
 }},
 
-{ id:'cf3', shop:'cafe', name:'Multiplying by 10, 100, 1000', gen:function(r,L){
-  var k = pick(r, [[10],[10,100],[10,100,1000]][L]);
-  var a = L===0 ? ri(r,3,40) : (L===1 ? ri(r,12,99) : ri(r,12,99)*pick(r,[1,1,10]));
+{ id:'cf3', shop:'cafe', name:'Multiplying by 10 and 100', gen:function(r,L){
+  var k = pick(r, [[10,10,100],[10,100],[10,100,1000]][L]);
+  var a = L===0 ? ri(r,3,99) : (L===1 ? ri(r,12,99) : ri(r,12,99)*pick(r,[1,1,10]));
+  if(r()<0.35)
+    return { q:'What is '+a+' × ? = '+(a*k)+'  — what is the missing number?',
+      kind:'num', keys:'num', ans:String(k),
+      hint:'Look at how the digits have slid along.',
+      steps:[a+' × '+k+' = '+(a*k)] };
   return { q:'What is '+a+' × '+k+'?',
     kind:'num', keys:'num', ans:String(a*k),
     hint:'The digits do not change — they just slide up to bigger columns.',
-    steps:['× '+k+' moves every digit '+(String(k).length-1)+' place(s) to the left.',
-           a+' × '+k+' = '+(a*k)] };
+    steps:['× '+k+' moves every digit '+(String(k).length-1)+' place(s) to the left.', a+' × '+k+' = '+(a*k)] };
 }},
 
 { id:'cf4', shop:'cafe', name:'2-digit × 1-digit', gen:function(r,L){
   var a,b;
-  if(L===0){ a=ri(r,11,19); b=pick(r,[2,3,4,5]); }
+  if(L===0){ a=ri(r,11,29); b=pick(r,[2,3,4,5]); }
   else if(L===1){ a=ri(r,13,39); b=ri(r,3,6); }
   else { a=ri(r,23,49); b=ri(r,4,9); }
   var t=Math.floor(a/10)*10, o=a%10;
-  return { q:'What is '+a+' × '+b+'?',
-    svg: (L===0) ? arraySVG(Math.min(b,8), 10) : '',
-    kind:'num', keys:'num', ans:String(a*b),
+  var tr=pick(r,TREATS), cat=pick(r,CATS);
+  var body={ kind:'num', keys:'num', ans:String(a*b),
     hint:'Split '+a+' into '+t+' and '+o+', multiply each bit, then add them.',
     steps:[t+' × '+b+' = '+(t*b), o+' × '+b+' = '+(o*b), (t*b)+' + '+(o*b)+' = '+(a*b)] };
+  if(r()<0.5) body.q='What is '+a+' × '+b+'?';
+  else { body.q=cat+' has '+a+' '+tr+' and '+b+' friends bring the same. How many '+tr+' in total?';
+         body.q='There are '+b+' boxes with '+a+' '+tr+' in each. How many altogether?'; body.unit=tr; }
+  return body;
 }},
 
 { id:'cf5', shop:'cafe', name:'Division with remainders', gen:function(r,L){
   var b,q;
-  if(L===0){ b=pick(r,[2,3,5]); q=ri(r,2,6); }
+  if(L===0){ b=pick(r,[2,3,4,5]); q=ri(r,2,9); }
   else if(L===1){ b=ri(r,3,6); q=ri(r,3,10); }
   else { b=ri(r,4,9); q=ri(r,5,15); }
   var rem=ri(r,1,b-1), a=b*q+rem;
-  return { q:a+' biscuits into bags of '+b+'. How many are left over?',
+  var tr=pick(r,TREATS);
+  if(r()<0.45)
+    return { q:a+' '+tr+' go into bags of '+b+'. How many FULL bags can Nour make?',
+      kind:'num', keys:'num', ans:String(q), unit:'bags',
+      hint:'How many '+b+'s fit inside '+a+'? The leftovers do not fill a bag.',
+      steps:[b+' × '+q+' = '+(b*q)+', and '+b+' × '+(q+1)+' would be too many.',
+             'So '+q+' full bags, with '+rem+' left over.'] };
+  return { q:a+' '+tr+' go into bags of '+b+'. How many are left over?',
     kind:'num', keys:'num', ans:String(rem), unit:'left over',
     hint:'How many full bags of '+b+' can you make? Whatever will not fill a bag is the remainder.',
-    steps:[b+' × '+q+' = '+(b*q), a+' − '+(b*q)+' = '+rem,
-           'So '+a+' ÷ '+b+' = '+q+' remainder '+rem] };
+    steps:[b+' × '+q+' = '+(b*q), a+' − '+(b*q)+' = '+rem, 'So '+a+' ÷ '+b+' = '+q+' remainder '+rem] };
 }},
 
 { id:'cf6', shop:'cafe', name:'Bigger multiplying', gen:function(r,L){
   var a,b;
-  if(L===0){ a=ri(r,11,25); b=pick(r,[10,20]); }
+  if(L===0){ a=ri(r,11,35); b=pick(r,[10,20,30]); }
   else if(L===1){ a=ri(r,12,29); b=ri(r,11,15); }
   else { a=ri(r,14,39); b=ri(r,12,25); }
   var bt=Math.floor(b/10)*10, bo=b%10;
-  return { q:'What is '+a+' × '+b+'?',
+  var q6 = r()<0.5 ? ('What is '+a+' × '+b+'?')
+                   : ('There are '+b+' boxes with '+a+' '+pick(r,TREATS)+' in each. What is '+a+' × '+b+'?');
+  return { q:q6,
     kind:'num', keys:'num', ans:String(a*b),
     hint: bo===0 ? ('Multiply by '+(bt/10)+' first, then by 10.')
                  : ('Split '+b+' into '+bt+' and '+bo+'. Do two easier multiplications, then add.'),
@@ -688,17 +861,26 @@ const SKILLS = [
 }},
 
 { id:'cf7', shop:'cafe', name:'Factors', gen:function(r,L){
-  var pool=[[6,8,10,12,15,20],[12,16,18,20,24,28,30],[36,40,42,45,48,54,56,60]][L];
-  var n=pick(r,pool);
-  var facs=[], j;
-  for(j=2;j<n;j++) if(n%j===0) facs.push(j);
-  var notFac=[]; for(j=2;j<=Math.min(20,n);j++) if(n%j!==0) notFac.push(j);
-  var right=pick(r,facs);
-  var wrongs=shuf(r,notFac).slice(0,2);
-  var opts=uniq([String(right)].concat(wrongs.map(String)));
-  for(j=2; j<=40 && opts.length<3; j++){
-    if(n%j!==0 && opts.indexOf(String(j))<0) opts.push(String(j));
+  var pool=[[6,8,9,10,12,14,15,16,18,20,21,24,25],[12,16,18,20,24,28,30,32,36],[36,40,42,45,48,54,56,60,63,72]][L];
+  var n=pick(r,pool), j;
+  var facs=[], notFac=[];
+  for(j=2;j<n;j++){ if(n%j===0) facs.push(j); else if(j<=25) notFac.push(j); }
+  if(!facs.length){ facs=[1]; }
+  var askNot = r()<0.35 && notFac.length>=1 && facs.length>=2;
+  if(askNot){
+    var wrong2=pick(r,notFac);
+    var rights=shuf(r,facs).slice(0,2).map(String);
+    var opts2=uniq([String(wrong2)].concat(rights));
+    return { q:'Which of these is NOT a factor of '+n+'?',
+      kind:'choice', opts:shuf(r,opts2), ans:String(wrong2),
+      hint:'A factor divides in exactly, with nothing left over.',
+      steps:[n+' ÷ '+wrong2+' leaves a remainder, so it is not a factor.',
+             'The other two divide '+n+' exactly.'] };
   }
+  var right=pick(r,facs);
+  var wrongs=shuf(r,notFac).slice(0,2).map(String);
+  var opts=uniq([String(right)].concat(wrongs));
+  for(j=2; j<=30 && opts.length<3; j++) if(n%j!==0 && opts.indexOf(String(j))<0) opts.push(String(j));
   return { q:'Which of these is a factor of '+n+'?',
     kind:'choice', opts:shuf(r,opts), ans:String(right),
     hint:'A factor divides in exactly, with nothing left over.',
@@ -707,10 +889,21 @@ const SKILLS = [
 }},
 
 { id:'cf8', shop:'cafe', name:'Multiples', gen:function(r,L){
-  var b=pick(r, [[2,5,10],[3,4,6,8],[6,7,8,9,12]][L]);
-  var k=ri(r,4,12), n=b*k;
-  var near=[n-1,n+1,n-3,n+3,n+5,n-5,n+7,n-7].filter(function(x){ return x>0 && x%b!==0; });
+  var b=pick(r, [[2,3,4,5,10],[3,4,6,8],[6,7,8,9,12]][L]);
+  var k=ri(r,3,14), n=b*k;
+  var near=[n-1,n+1,n-3,n+3,n+5,n-5,n+7,n-7,n+2,n-2].filter(function(x){ return x>0 && x%b!==0; });
   var opts=uniq([String(n)].concat(shuf(r,near).slice(0,3).map(String)));
+  if(r()<0.3){
+    /* which is NOT a multiple */
+    var notOne=pick(r,near);
+    var others=[b*ri(r,2,9), b*ri(r,2,9), b*ri(r,2,9)].filter(function(x,i,arr){ return arr.indexOf(x)===i; })
+                .slice(0,2).map(String);
+    var o2=uniq([String(notOne)].concat(others));
+    if(o2.length>=3) return { q:'Which number is NOT a multiple of '+b+'?',
+      kind:'choice', opts:shuf(r,o2), ans:String(notOne),
+      hint:'Count in '+b+'s. Which one do you miss?',
+      steps:[notOne+' is not in the '+b+' times table.', 'The others are.'] };
+  }
   return { q:'Which number is a multiple of '+b+'?',
     kind:'choice', opts:shuf(r,opts), ans:String(n),
     hint:'Count in '+b+'s and see which one you land on.',
@@ -723,45 +916,54 @@ const SKILLS = [
   if(L===0) m=pick(r,[0,15,30,45]);
   else if(L===1) m=pick(r,[0,5,10,15,20,25,30,35,40,45,50,55]);
   else m=ri(r,0,59);
-  var mins=(h%12)*60+m, hh=(h%12===0?12:h%12);
-  return { q:'What time does the station clock show?',
-    svg: clockSVG(mins), kind:'num', keys:'time', ans:two(hh)+':'+two(m),
-    alt:[ hh+':'+two(m) ],
-    hint:'The short hand gives the hour. The long red hand counts the minutes — each small mark is one minute.',
+  var mins=(h%12)*60+m, hh=(h%12===0?12:h%12), clock=pick(r,CLOCKS);
+  return { q:'What time does the '+clock+' show?',
+    svg: clockSVG(mins), kind:'num', keys:'time', ans:two2(hh)+':'+two2(m), alt:[ hh+':'+two2(m) ],
+    hint:'The short hand gives the hour. The long red hand counts the minutes.',
     steps:['Short hand is just past '+hh+'.', 'Long hand is on '+m+' minutes.',
-           'So the time is '+two(hh)+':'+two(m)+'.'] };
+           'So the time is '+two2(hh)+':'+two2(m)+'.'] };
 }},
 
 { id:'st2', shop:'station', name:'Writing the time', gen:function(r,L){
   if(L===0){
     var h=ri(r,1,12), kind=pick(r,['o’clock','half past','quarter past','quarter to']);
     var m = kind==='o’clock'?0 : kind==='half past'?30 : kind==='quarter past'?15 : 45;
-    var shown = kind==='quarter to' ? (h%12)+1 : h;   // "quarter to 4" is 3:45
-    var hourFor = kind==='quarter to' ? h : h;
-    var label = kind==='quarter to' ? ('quarter to '+((h%12)+1)) : (kind==='o’clock' ? (h+' o’clock') : (kind+' '+h));
+    var label = kind==='quarter to' ? ('quarter to '+((h%12)+1))
+              : kind==='o’clock' ? (h+' o’clock') : (kind+' '+h);
+    if(r()<0.35){
+      var wrongs=[], guard=0;
+      while(wrongs.length<2 && guard++<40){
+        var wh=ri(r,1,12), wm=pick(r,[0,15,30,45]), cand=two2(wh)+':'+two2(wm);
+        if(cand!==two2(h)+':'+two2(m) && wrongs.indexOf(cand)<0) wrongs.push(cand);
+      }
+      return { q:'Which clock says "'+label+'"?',
+        kind:'choice', opts:shuf(r,[two2(h)+':'+two2(m)].concat(wrongs)), ans:two2(h)+':'+two2(m),
+        hint:'Quarter past is 15 minutes, half past is 30, quarter to is 45 minutes past the hour before.',
+        steps:[label+' is '+two2(h)+':'+two2(m)+'.'] };
+    }
     return { q:'Write "'+label+'" as a digital time.',
-      kind:'num', keys:'time', ans:two(h)+':'+two(m), alt:[h+':'+two(m)],
+      kind:'num', keys:'time', ans:two2(h)+':'+two2(m), alt:[h+':'+two2(m)],
       hint:'Quarter past is 15 minutes, half past is 30, quarter to is 45 minutes past the hour before.',
-      steps:[label+' → the hour is '+h+'.', 'The minutes are '+m+'.',
-             'So it is '+two(h)+':'+two(m)+'.'] };
+      steps:[label+' → the hour is '+h+'.', 'The minutes are '+m+'.', 'So it is '+two2(h)+':'+two2(m)+'.'] };
   }
-  var hh=ri(r,1,11), mm=pick(r,[0,5,15,20,30,40,45,50]);
+  var hh=ri(r,1,11), mm=pick(r,[0,5,15,20,25,30,40,45,50]);
   var pm = L===1 ? false : true;
   var h24 = pm ? hh+12 : hh;
-  return { q:'The train leaves at '+hh+':'+two(mm)+(pm?'pm':'am')+'. Write that in 24-hour time.',
-    kind:'num', keys:'time', ans:two(h24)+':'+two(mm),
+  return { q:'The train leaves at '+hh+':'+two2(mm)+(pm?'pm':'am')+'. Write that in 24-hour time.',
+    kind:'num', keys:'time', ans:two2(h24)+':'+two2(mm),
     hint: pm ? 'After midday, add 12 to the hour.' : 'Before midday the hour stays the same — just add a leading zero.',
-    steps: pm ? [hh+' + 12 = '+h24, 'So '+hh+':'+two(mm)+'pm = '+two(h24)+':'+two(mm)]
-              : ['Morning times keep the same hour.', 'So '+hh+':'+two(mm)+'am = '+two(h24)+':'+two(mm)] };
+    steps: pm ? [hh+' + 12 = '+h24, 'So '+hh+':'+two2(mm)+'pm = '+two2(h24)+':'+two2(mm)]
+              : ['Morning times keep the same hour.', 'So '+hh+':'+two2(mm)+'am = '+two2(h24)+':'+two2(mm)] };
 }},
 
 { id:'st3', shop:'station', name:'How long does it take?', gen:function(r,L){
   var start, dur;
-  if(L===0){ start=ri(r,8,16)*60 + pick(r,[0,30]); dur=pick(r,[30,60,90,120]); }
+  if(L===0){ start=ri(r,7,20)*60 + pick(r,[0,15,30,45]); dur=pick(r,[15,30,45,60,75,90,120]); }
   else if(L===1){ start=ri(r,7,18)*60 + pick(r,[0,5,10,15,20,30,40,45]); dur=pick(r,[20,25,35,40,45,50,55]); }
   else { start=ri(r,6,20)*60 + pick(r,[0,5,10,15,20,25,35,40,50,55]); dur=pick(r,[70,80,95,110,125,140]); }
-  var end=start+dur;
-  return { q:'The train leaves at '+hhmm(start)+' and arrives at '+hhmm(end)+'. How long is the journey, in minutes?',
+  var end=start+dur, a=pick(r,STATIONS), b=pick(r,STATIONS.filter(function(x){return x!==a;}));
+  return { q:'The train leaves '+a+' at '+hhmm(start)+' and arrives at '+b+' at '+hhmm(end)+
+             '. How long is the journey, in minutes?',
     kind:'num', keys:'num', ans:String(dur), unit:'minutes',
     hint:'Jump to the next whole hour first, then count the rest.',
     steps:['From '+hhmm(start)+' to '+hhmm(Math.ceil(start/60)*60)+' is '+(Math.ceil(start/60)*60-start)+' min.',
@@ -771,10 +973,12 @@ const SKILLS = [
 
 { id:'st4', shop:'station', name:'Arrival times', gen:function(r,L){
   var start, dur;
-  if(L===0){ start=ri(r,8,17)*60 + pick(r,[0,30]); dur=pick(r,[30,60,90,120]); }
+  if(L===0){ start=ri(r,7,19)*60 + pick(r,[0,15,30,45]); dur=pick(r,[15,30,45,60,90,120]); }
   else if(L===1){ start=ri(r,7,18)*60 + pick(r,[0,10,15,20,25,35,40]); dur=pick(r,[20,25,35,45,50]); }
   else { start=ri(r,6,21)*60 + pick(r,[0,10,15,20,25,35,40,45,50]); dur=pick(r,[55,75,90,105,140]); }
-  return { q:'A train leaves at '+hhmm(start)+' and the trip takes '+dur+' minutes. What time does it arrive?'+(L===0?'':' (24-hour)'),
+  var a=pick(r,STATIONS);
+  return { q:'A train leaves '+a+' at '+hhmm(start)+' and the trip takes '+dur+
+             ' minutes. What time does it arrive?'+(L===0?'':' (24-hour)'),
     kind:'num', keys:'time', ans:hhmm(start+dur),
     hint:'Add the whole hours first, then the leftover minutes.',
     steps:[dur+' minutes = '+Math.floor(dur/60)+' h '+(dur%60)+' min.',
@@ -783,40 +987,74 @@ const SKILLS = [
 }},
 
 { id:'st5', shop:'station', name:'Reading a timetable', gen:function(r,L){
-  var stops=['Bramford','Willow Bay','Hollytown','Marchmill'];
-  var t0=ri(r,7,18)*60 + (L===0 ? 0 : pick(r,[0,12,20,35,48]));
-  var gaps = L===0 ? [30,60,30] : (L===1 ? [ri(r,10,20),ri(r,15,30),ri(r,10,20)]
-                                        : [ri(r,12,25),ri(r,15,30),ri(r,10,22)]);
-  var times=[t0, t0+gaps[0], t0+gaps[0]+gaps[1], t0+gaps[0]+gaps[1]+gaps[2]];
-  var i = L===0 ? 0 : ri(r,0,2);
+  var stops=shuf(r,STATIONS).slice(0,4);
+  var t0=ri(r,6,20)*60 + (L===0 ? pick(r,[0,5,10,15,20,25,30,35,40,45,50,55]) : pick(r,[0,12,20,35,48,7,53]));
+  var g = L===0 ? [pick(r,[10,15,20,25,30,35,40]),pick(r,[10,15,20,25,30]),pick(r,[10,15,20,25,30])]
+                : [ri(r,12,28),ri(r,15,32),ri(r,10,24)];
+  var times=[t0, t0+g[0], t0+g[0]+g[1], t0+g[0]+g[1]+g[2]];
   var rows = stops.map(function(s,k){ return '<tr><td>'+s+'</td><td>'+hhmm(times[k])+'</td></tr>'; }).join('');
-  return { q:'How many minutes from '+stops[i]+' to '+stops[i+1]+'?',
-    svg:'<table class="tt"><tr><th>Stop</th><th>Time</th></tr>'+rows+'</table>',
-    kind:'num', keys:'num', ans:String(times[i+1]-times[i]), unit:'minutes',
-    hint:'Find both stops in the table and count the minutes between the two times.',
-    steps:[stops[i]+' at '+hhmm(times[i]), stops[i+1]+' at '+hhmm(times[i+1]),
-           'Difference = '+(times[i+1]-times[i])+' minutes'] };
+  var table='<table class="tt"><tr><th>Stop</th><th>Time</th></tr>'+rows+'</table>';
+  var shape=Math.floor(r()*3);
+  if(shape===0){
+    var i=ri(r,0,2);
+    return { q:'How many minutes from '+stops[i]+' to '+stops[i+1]+'?', svg:table,
+      kind:'num', keys:'num', ans:String(times[i+1]-times[i]), unit:'minutes',
+      hint:'Find both stops in the table and count the minutes between the two times.',
+      steps:[stops[i]+' at '+hhmm(times[i]), stops[i+1]+' at '+hhmm(times[i+1]),
+             'Difference = '+(times[i+1]-times[i])+' minutes'] };
+  }
+  if(shape===1){
+    var j=ri(r,1,3);
+    return { q:'What time does the train reach '+stops[j]+'?', svg:table,
+      kind:'num', keys:'time', ans:hhmm(times[j]),
+      hint:'Find '+stops[j]+' in the left column and read across.',
+      steps:['The row for '+stops[j]+' says '+hhmm(times[j])+'.'] };
+  }
+  var m=ri(r,0,3);
+  var wrongStops=stops.filter(function(s){ return s!==stops[m]; }).slice(0,2);
+  return { q:'Which stop does the train reach at '+hhmm(times[m])+'?', svg:table,
+    kind:'choice', opts:shuf(r,[stops[m]].concat(wrongStops)), ans:stops[m],
+    hint:'Look down the Time column for '+hhmm(times[m])+', then read across to the left.',
+    steps:[hhmm(times[m])+' is the time for '+stops[m]+'.'] };
 }},
 
 { id:'st6', shop:'station', name:'Units of time', gen:function(r,L){
   var sets=[
-    [['seconds in a minute',60],['minutes in an hour',60],['days in a week',7],
-     ['months in a year',12],['hours in a day',24],['minutes in half an hour',30]],
+    [['seconds in a minute',60],['minutes in an hour',60],['days in a week',7],['months in a year',12],
+     ['hours in a day',24],['minutes in half an hour',30],['seconds in half a minute',30],
+     ['days in 2 weeks',14],['days in 3 weeks',21],['hours in half a day',12],['months in half a year',6],
+     ['minutes in 2 hours',120],['days in June',30],['days in July',31],['days in February',28],
+     ['weeks in a year',52],['minutes in a quarter of an hour',15],['hours in 2 days',48],
+     ['days in 4 weeks',28],['seconds in 2 minutes',120],['minutes in 3 hours',180],['hours in 3 days',72],
+     ['days in April',30],['days in December',31],['days in November',30],['days in August',31],
+     ['minutes in an hour and a half',90],['hours in 5 days',120],['days in 5 weeks',35],
+     ['months in 2 years',24],['seconds in 3 minutes',180],['minutes in 4 hours',240],
+     ['weeks in 3 years',156],['days in a fortnight',14],['hours in a day and a half',36],
+     ['minutes in 5 hours',300],['days in 6 weeks',42]],
     [['minutes in a quarter of an hour',15],['minutes in 3 hours',180],['hours in 2 days',48],
-     ['days in 4 weeks',28],['days in September',30],['hours in half a day',12]],
+     ['days in 4 weeks',28],['days in September',30],['hours in half a day',12],['seconds in 5 minutes',300],
+     ['minutes in 4 hours',240],['days in 5 weeks',35],['hours in 4 days',96]],
     [['seconds in 4 minutes',240],['months in 3 years',36],['minutes in 2 and a half hours',150],
-     ['days in a leap year',366],['hours in a week',168],['minutes in a day',1440]]
+     ['days in a leap year',366],['hours in a week',168],['minutes in a day',1440],
+     ['seconds in an hour',3600],['days in a year',365]]
   ];
   var p=pick(r,sets[L]);
   return { q:'How many '+p[0]+'?', kind:'num', keys:'num', ans:String(p[1]),
-    hint:'1 hour = 60 minutes · 1 day = 24 hours · 1 week = 7 days · 1 year = 12 months.',
+    hint:'1 minute = 60 seconds · 1 hour = 60 minutes · 1 day = 24 hours · 1 week = 7 days.',
     steps:[p[0].charAt(0).toUpperCase()+p[0].slice(1)+' = '+p[1]] };
 }},
 
 { id:'st7', shop:'station', name:'Counting to the hour', gen:function(r,L){
   if(L===0){
-    var s0=ri(r,8,20)*60 + pick(r,[35,40,45,50,55]);
+    var s0=ri(r,7,21)*60 + pick(r,[5,10,15,20,25,30,35,40,45,50,55]);
     var e0=Math.ceil(s0/60)*60;
+    if(r()<0.4){
+      var half=Math.floor(s0/60)*60+30;
+      if(half>s0) return { q:'It is '+hhmm(s0)+'. How many minutes until half past?',
+        svg: clockSVG(s0), kind:'num', keys:'num', ans:String(half-s0), unit:'minutes',
+        hint:'Half past is 30 minutes past the hour. You are on '+(s0%60)+'.',
+        steps:['30 − '+(s0%60)+' = '+(half-s0), 'So '+(half-s0)+' minutes until '+hhmm(half)+'.'] };
+    }
     return { q:'It is '+hhmm(s0)+'. How many minutes until the next o’clock?',
       svg: clockSVG(s0), kind:'num', keys:'num', ans:String(e0-s0), unit:'minutes',
       hint:'Count on from '+(s0%60)+' minutes up to 60.',
@@ -838,22 +1076,30 @@ const SKILLS = [
   var lens=[31,28,31,30,31,30,31,31,30,31,30,31];
   var mi=ri(r,0,11);
   if(L===0){
-    var kind=pick(r,['after','before','days']);
-    if(kind==='days'){
+    var kind=Math.floor(r()*4);
+    if(kind===0){
+      var wrongLens=uniq(['28','30','31'].filter(function(x){ return +x!==lens[mi]; })).slice(0,2);
       return { q:'How many days are there in '+months[mi]+'?',
-        kind:'choice', opts:shuf(r,uniq([String(lens[mi]),'30','31','28']).slice(0,3)),
-        ans:String(lens[mi]),
+        kind:'choice', opts:shuf(r,[String(lens[mi])].concat(wrongLens)), ans:String(lens[mi]),
         hint:'Thirty days has September, April, June and November. February is the short one.',
         steps:[months[mi]+' has '+lens[mi]+' days.'] };
     }
-    var target = kind==='after' ? months[(mi+1)%12] : months[(mi+11)%12];
-    var wrongs = shuf(r, months.filter(function(m){ return m!==target && m!==months[mi]; })).slice(0,2);
-    return { q:'Which month comes '+(kind==='after'?'straight after':'just before')+' '+months[mi]+'?',
-      kind:'choice', opts:shuf(r,[target].concat(wrongs)), ans:target,
-      hint:'Say the months in order in your head.',
-      steps:[(kind==='after'?'After ':'Before ')+months[mi]+' comes '+target+'.'] };
+    if(kind===1 || kind===2){
+      var after = kind===1;
+      var target = after ? months[(mi+1)%12] : months[(mi+11)%12];
+      var wrongs = shuf(r, months.filter(function(m){ return m!==target && m!==months[mi]; })).slice(0,2);
+      return { q:'Which month comes '+(after?'straight after':'just before')+' '+months[mi]+'?',
+        kind:'choice', opts:shuf(r,[target].concat(wrongs)), ans:target,
+        hint:'Say the months in order in your head.',
+        steps:[(after?'After ':'Before ')+months[mi]+' comes '+target+'.'] };
+    }
+    var d1=ri(r,1,lens[mi]-3), d2=ri(r,d1+1,lens[mi]);
+    return { q:'How many days from '+d1+' '+months[mi]+' to '+d2+' '+months[mi]+'?',
+      kind:'num', keys:'num', ans:String(d2-d1), unit:'days',
+      hint:'Count on from '+d1+' to '+d2+'.',
+      steps:[d2+' − '+d1+' = '+(d2-d1)+' days'] };
   }
-  var d=ri(r,1,lens[mi]-1), add = L===1 ? 7 : pick(r,[10,14,21,28]);
+  var d=ri(r,1,lens[mi]-1), add = L===1 ? pick(r,[7,14]) : pick(r,[10,14,21,28]);
   var day=d+add, m2=mi;
   while(day>lens[m2]){ day-=lens[m2]; m2=(m2+1)%12; }
   var right=day+' '+months[m2];
@@ -861,8 +1107,7 @@ const SKILLS = [
   return { q:'Today is '+d+' '+months[mi]+'. What date is it '+add+' days later?',
     kind:'choice', opts: shuf(r,opts).slice(0,4), ans: right,
     hint:months[mi]+' has '+lens[mi]+' days. Count on and roll into the next month if you run out.',
-    steps:[d+' + '+add+' = '+(d+add), months[mi]+' has '+lens[mi]+' days.',
-           'So the date is '+right+'.'] };
+    steps:[d+' + '+add+' = '+(d+add), months[mi]+' has '+lens[mi]+' days.', 'So the date is '+right+'.'] };
 }}
 
 ];
@@ -896,11 +1141,13 @@ const ECON = {
   PURSE_DAILY: 10,
   PURSE_MAX_LOSS: 5,
   PURSE_LIFETIME: 200,
-  DAILY_QUESTIONS: 20,
+  CHECKPOINT_EVERY: 20,   // a soft breather she can always skip past
   MASTERY_HITS: 4,        // clean answers needed for a star
   MASTERY_DAYS: 2,        // spread over at least this many different days
   FOCUS_SIZE: 3,          // how many skills she works on at once
-  REVIEW_CHANCE: 0.2      // how often a finished skill comes back around
+  REVIEW_CHANCE: 0.2,     // how often a finished skill comes back around
+  PURSE_MIN_QUESTIONS: 10,// questions in a day before the purse bonus banks
+  NO_REPEAT: 12           // how many recent questions a skill remembers, to avoid repeats
 };
 
 </script>
@@ -935,8 +1182,9 @@ function P(p){ var s=p<0?'-':''; p=Math.abs(p); return s+'£'+Math.floor(p/100)+
 function pShort(p){ return p<100 ? p+'p' : P(p); }
 function sk(id){
   var k=S.skills[id];
-  if(!k){ k=S.skills[id]={ hits:0, days:[], star:false, seen:0, shaky:0 }; }
+  if(!k){ k=S.skills[id]={ hits:0, days:[], star:false, seen:0, shaky:0, recent:[] }; }
   if(k.shaky===undefined) k.shaky=0;
+  if(!k.recent) k.recent=[];
   return k;
 }
 function skDone(id){ return sk(id).star; }
@@ -1129,7 +1377,9 @@ function renderPurseBar(){
   var sc=$('#sCoins'); if(sc) sc.innerHTML='🪙 <b>'+S.coins+'</b>';
 }
 function renderMap(){
-  rollDay(); renderPurseBar();
+  rollDay();
+  if(S.today.asked >= ECON.PURSE_MIN_QUESTIONS) bankPurse(true);
+  renderPurseBar();
   $('#skyline').innerHTML = skylineSVG();
   var townsfolk = ['Ada','Theo','Rosa','Kit','Mila','Otis','Suri','Finn'];
   var street = townsfolk.slice(0, 5).map(function(n,i){
@@ -1137,10 +1387,9 @@ function renderMap(){
       personSVG(n+starCount(), ['#E4694A','#F2B33D','#6FB98F','#5B8FB9','#8D6BA0'][i%5])+'</div>';
   }).join('');
   var st=$('#street'); if(st) st.innerHTML=street;
-  var left = ECON.DAILY_QUESTIONS - S.today.asked;
-  $('#welcomeLine').textContent = left>0
-    ? (S.today.asked===0 ? 'Where shall we work today?' : left+' more jobs to finish today’s shift')
-    : 'Today’s shift is done. Lovely work!';
+  $('#welcomeLine').textContent = S.today.asked===0
+    ? 'Where shall we work today?'
+    : S.today.asked+' job'+(S.today.asked===1?'':'s')+' done today — keep going as long as you like.';
   var el=$('#shops'); el.innerHTML='';
   SHOPS.filter(function(s){ return S.shopsOn[s.id]; }).forEach(function(s){
     var mine=SKILLS_BY_SHOP[s.id];
@@ -1214,7 +1463,6 @@ function pickSkill(shopId){
 
 function openShop(id){
   rollDay();
-  if(S.today.asked >= ECON.DAILY_QUESTIONS){ show('map'); shiftOver(); return; }
   curShop=id; S.lastShop=id; save();
   var s=SHOPS.filter(function(x){return x.id===id;})[0];
   $('#shopName').textContent = s.name;
@@ -1225,12 +1473,20 @@ function openShop(id){
 
 function nextQuestion(){
   rollDay(); renderPurseBar();
-  if(S.today.asked >= ECON.DAILY_QUESTIONS){ shiftOver(); return; }
   var picked=pickSkill(curShop);
   var L=level();
-  var r=rngFrom(Math.floor(Math.random()*4294967295)+1);
-  var q;
-  try{ q=picked.skill.gen(r, L); }catch(e){ q=picked.skill.gen(rngFrom(12345), L); }
+  var k=sk(picked.skill.id);
+  var q=null, sig=null, guard=0;
+  /* keep rolling until we get one she has not seen in the last few goes */
+  while(guard++ < 40){
+    try{ q=picked.skill.gen(rngFrom(Math.floor(Math.random()*4294967295)+1), L); }
+    catch(e){ q=picked.skill.gen(rngFrom(12345+guard), L); }
+    sig=hash(String(q.q).replace(/\s+/g,' ')+'|'+q.ans);
+    if(k.recent.indexOf(sig)<0) break;
+  }
+  k.recent.push(sig);
+  while(k.recent.length > ECON.NO_REPEAT) k.recent.shift();
+  save();
   cur={ skill:picked.skill, q:q, L:L, tries:0, usedHint:false, sawSolution:false, review:picked.review, typed:'' };
   drawQuestion();
 }
@@ -1239,7 +1495,7 @@ function drawQuestion(){
   var q=cur.q;
   var pics = q.svg ? '<div class="pics">'+q.svg+'</div>' : '';
   var keeper = SHOPS.filter(function(x){ return x.id===curShop; })[0];
-  $('#shopSub').textContent = keeper.keeper+' · job '+(S.today.asked+1)+' of '+ECON.DAILY_QUESTIONS;
+  $('#shopSub').textContent = keeper.keeper+' · job '+(S.today.asked+1)+' today';
   $('#qwrap').innerHTML =
     (cur.review ? '<div class="tag">keeping it sharp ✨</div>'
                 : '<div class="tag">'+cur.skill.name+'</div>')+
@@ -1390,7 +1646,7 @@ function rightAnswer(btn){
 
 function finishQuestion(){
   S.today.asked++; save();
-  if(S.today.asked>=ECON.DAILY_QUESTIONS){ shiftOver(); return; }
+  if(S.today.asked % ECON.CHECKPOINT_EVERY === 0){ breather(); return; }
   nextQuestion();
 }
 
@@ -1407,20 +1663,23 @@ function masteryCheer(name, pennies){
   $('#cheerGo').addEventListener('click', function(){ c.classList.remove('on'); finishQuestion(true); });
 }
 
-function shiftOver(){
-  var banked = S.today.asked>=10 ? bankPurse() : 0;
+function breather(){
+  var first = (S.today.asked === ECON.CHECKPOINT_EVERY);
+  var banked = (S.today.asked >= ECON.PURSE_MIN_QUESTIONS) ? bankPurse() : 0;
   var c=$('#cheer');
-  c.innerHTML='<div style="font-size:56px">🌙</div>'+
-    '<h2 style="font-size:23px">Shift finished</h2>'+
-    '<div style="font-size:16px;max-width:320px;line-height:1.45">You did '+S.today.asked+' jobs today'+
-      (S.today.lost? ' and lost '+S.today.lost+'p from the purse' : '')+'.</div>'+
-    (banked? '<div class="reward">👛 +'+banked+'p careful-work bonus banked</div>'
-           : (S.today.asked<10 ? '<div style="font-size:14px;opacity:.7">Do 10 jobs in a day to bank the purse bonus.</div>' : ''))+
+  c.innerHTML='<div style="font-size:54px">'+(first?'🎈':'🌟')+'</div>'+
+    '<h2 style="font-size:23px">'+S.today.asked+' jobs done today</h2>'+
+    (S.today.lost ? '<div style="font-size:14px;opacity:.7">'+S.today.lost+'p slipped out of the purse today.</div>' : '')+
+    (banked ? '<div class="reward">👛 +'+banked+'p careful-work bonus banked</div>' : '')+
     '<div style="font-size:17px;font-weight:700">Bank: '+P(totalSavedP())+'</div>'+
-    '<div style="font-size:14px;opacity:.7;max-width:300px">Come back tomorrow — a little every day beats a lot in one go.</div>'+
-    '<button class="btn blue" id="cheerGo">See my money</button>';
+    '<div style="font-size:14px;opacity:.72;max-width:320px">Keep going as long as you like — or stop here and come back tomorrow.</div>'+
+    '<div style="display:flex;gap:9px;flex-wrap:wrap;justify-content:center">'+
+      '<button class="btn sage" id="cheerGo">Keep going →</button>'+
+      '<button class="btn ghost sm" id="cheerStop">That’s enough for today</button>'+
+    '</div>';
   c.classList.add('on');
-  $('#cheerGo').addEventListener('click', function(){ c.classList.remove('on'); show('bank'); });
+  $('#cheerGo').addEventListener('click', function(){ c.classList.remove('on'); nextQuestion(); });
+  $('#cheerStop').addEventListener('click', function(){ c.classList.remove('on'); show('bank'); });
 }
 
 /* ============================================================
@@ -1454,7 +1713,7 @@ function renderBank(){
       '<div class="muted" style="margin-top:8px">Payday is on Sunday. Show this to Dad.</div></div>'+
 
     '<div class="card"><h3>Today</h3>'+
-      '<div class="row"><span>Jobs done</span><span>'+S.today.asked+' / '+ECON.DAILY_QUESTIONS+'</span></div>'+
+      '<div class="row"><span>Jobs done</span><span>'+S.today.asked+'</span></div>'+
       '<div class="row"><span>👛 Purse left</span><span>'+S.today.purse+'p</span></div>'+
       '<div class="muted" style="margin-top:6px">Your bank never goes down. Only today’s purse can, and only on skills you have already finished.</div>'+
     '</div>'+
@@ -1594,7 +1853,10 @@ function renderGrown(){
       'There are no timers — timed drilling is the best-documented trigger of maths anxiety at this age. '+
       'Wrong answers never touch the bank: a first miss brings a hint, a second brings the worked solution, '+
       'and only a mistake on a skill she has already earned a star for costs 1p of that day’s purse (max '+
-      ECON.PURSE_MAX_LOSS+'p a day). The day stops after '+ECON.DAILY_QUESTIONS+' questions.</p></div>'+
+      ECON.PURSE_MAX_LOSS+'p a day). There is no daily limit — every '+ECON.CHECKPOINT_EVERY+
+      ' questions she gets a breather screen she can walk straight past. '+
+      'Each skill also remembers its last '+ECON.NO_REPEAT+
+      ' questions and will not hand her the same one again.</p></div>'+
 
     '<div class="card" style="margin-top:10px"><h3>🔒 Grown-ups’ PIN</h3>'+
       '<p class="muted">'+(S.pin

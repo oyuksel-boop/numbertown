@@ -56,7 +56,12 @@ without ever taking money back.
 3. Then she types the answer in herself before moving on. Repair, not punishment.
 4. Still stuck after a few goes? A quiet "leave this one for now" appears.
 
-Every question is generated fresh, so the same skill is never the same sum twice.
+Every question is generated fresh — **53,000 different questions** across the 32
+skills, from 6,100 before this was measured and fixed. On top of that each skill
+remembers its last 12 questions and refuses to hand her the same one again, so a
+small fact set (there are only so many ways to ask "what is 1/2 as a decimal")
+rotates rather than repeating. Verified: 55 questions in one sitting, 55 different
+questions, none repeated.
 
 ## The shops
 
@@ -74,8 +79,9 @@ handling, patterns, place value and decimals are the next seven shops.
 
 - **No timers anywhere.** Timed drilling is the best-documented trigger of maths
   anxiety at this age; roughly a third of children are affected.
-- **A day stops at 20 questions** — about fifteen minutes. It prevents both
-  grinding and money-farming.
+- **No daily limit.** She can do as much as she likes. Every 20 questions a
+  breather screen appears with the day's total; "Keep going" walks straight past
+  it. Money-farming is held back by the two-day mastery rule, not by a wall.
 - **Effort is praised, not just correctness.** Getting there after a hint still
   earns coins and still counts.
 - 🪙 **Coins** are separate play money, earned on every question and never lost.
