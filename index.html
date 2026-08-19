@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#F7B7A3">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Isabel Leyla's Number Town</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#2E2A3B; --cream:#FFF6EA; --paper:#fff;
+  --terra:#E4694A; --mustard:#F2B33D; --sage:#6FB98F; --blue:#5B8FB9; --plum:#8D6BA0;
+  --dusk1:#FFE3B8; --dusk2:#FFC49B; --dusk3:#D9A7C7;
+  --sh:rgba(46,42,59,.20);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden}
+body{
+  font-family:"Fredoka",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-weight:600; background:var(--cream); color:var(--ink);
+  user-select:none;-webkit-user-select:none;touch-action:manipulation;overscroll-behavior:none;
+}
+h1,h2,h3{margin:0;font-weight:700}
+.screen{position:fixed;inset:0;display:none;flex-direction:column;
+  padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+.screen.on{display:flex}
+
+/* ---------- buttons ---------- */
+.btn{border:none;border-radius:22px;font:inherit;font-weight:700;color:#fff;background:var(--terra);
+  padding:14px 22px;font-size:18px;box-shadow:0 5px 0 rgba(0,0,0,.18);cursor:pointer;
+  transition:transform .07s,box-shadow .07s}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.18)}
+.btn.sage{background:var(--sage)} .btn.blue{background:var(--blue)} .btn.plum{background:var(--plum)}
+.btn.mustard{background:var(--mustard);color:var(--ink)}
+.btn.ghost{background:#fff;color:var(--ink);box-shadow:0 4px 0 var(--sh)}
+.btn.sm{padding:9px 15px;font-size:15px;border-radius:16px;white-space:nowrap}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.ico{width:46px;height:46px;border-radius:50%;border:none;background:#fff;color:var(--ink);font-size:21px;
+  box-shadow:0 4px 0 var(--sh);display:grid;place-items:center;cursor:pointer;flex:0 0 auto;font-family:inherit}
+.ico:active{transform:translateY(3px);box-shadow:0 1px 0 var(--sh)}
+
+/* ---------- purse bar ---------- */
+.purse{display:flex;gap:7px;align-items:center;padding:8px 10px;flex:0 0 auto}
+.pill{background:#fff;border-radius:16px;padding:6px 11px;font-size:14px;font-weight:700;
+  box-shadow:0 3px 0 var(--sh);display:flex;align-items:center;gap:5px;white-space:nowrap}
+.pill b{font-size:16px}
+.pill.risk{background:#FFF0D8}
+.grow{flex:1}
+
+/* ---------- town map ---------- */
+#map{background:linear-gradient(180deg,var(--dusk3) 0%,var(--dusk2) 38%,var(--dusk1) 68%,#F6E2C0 100%)}
+#townwrap{flex:1;position:relative;overflow-y:auto;overflow-x:hidden;padding:0 12px 18px}
+#skyline{position:absolute;inset:0;pointer-events:none;z-index:0}
+.welcome{position:relative;z-index:1;text-align:center;padding:6px 8px 10px}
+.welcome h1{font-size:clamp(20px,5.6vw,28px);line-height:1.15}
+.welcome p{margin:3px 0 0;font-size:13px;opacity:.7;font-weight:600}
+.shops{position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.shop{background:#fff;border:none;border-radius:20px;padding:9px 9px 11px;box-shadow:0 5px 0 var(--sh);
+  cursor:pointer;font:inherit;color:var(--ink);text-align:center;display:flex;flex-direction:column;gap:5px;align-items:center}
+.shop:active{transform:translateY(3px);box-shadow:0 2px 0 var(--sh)}
+.shop svg{width:100%;height:auto;display:block}
+.frontage{position:relative;width:100%}
+.frontage .keeper{position:absolute;right:-3px;bottom:-7px;width:29%}
+.shop .nm{font-weight:700;font-size:14px;line-height:1.15}
+.shop .tp{font-size:10.5px;opacity:.6;line-height:1.2;font-weight:600}
+.stars{display:flex;gap:2px;justify-content:center;flex-wrap:wrap}
+.stars i{width:11px;height:11px;border-radius:50%;background:#E7DFD3;display:block}
+.stars i.on{background:var(--mustard);box-shadow:0 0 0 2px #FFF0D0}
+.mapfoot{position:relative;z-index:1;display:flex;gap:9px;justify-content:center;padding:14px 0 4px;flex-wrap:wrap}
+#street{position:relative;z-index:1;display:flex;justify-content:space-around;align-items:flex-end;
+  padding:16px 4px 0;opacity:.92}
+#street .walker{width:12%;max-width:56px;animation:bob 2.6s ease-in-out infinite}
+#street .walker svg{width:100%;height:auto;display:block}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-1.5deg)}50%{transform:translateY(-6px) rotate(1.5deg)}}
+
+/* ---------- shop / question ---------- */
+#shop{background:var(--cream)}
+.shophead{display:flex;align-items:center;gap:9px;padding:7px 10px;flex:0 0 auto}
+.shophead .who{width:44px;height:52px;flex:0 0 auto}
+.shophead .ttl{font-size:16px;font-weight:700;line-height:1.1}
+.shophead .sub{font-size:11.5px;opacity:.6;font-weight:600}
+.qwrap{flex:1;overflow-y:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:11px;padding:6px 14px;min-height:0}
+.speech{background:#fff;border-radius:18px;padding:13px 16px;box-shadow:0 4px 0 var(--sh);
+  font-size:clamp(16px,4.4vw,20px);line-height:1.35;text-align:center;max-width:520px;position:relative}
+.speech:after{content:'';position:absolute;left:26px;bottom:-9px;border:10px solid transparent;
+  border-top-color:#fff;border-bottom:0}
+.talk{display:flex;flex-direction:column;align-items:flex-start;width:100%;max-width:520px}
+.talk .speech{width:100%}
+.talkwho{width:50px;margin:1px 0 0 8px;flex:0 0 auto}
+.talkwho svg{width:100%;height:auto;display:block}
+.pic{width:min(300px,84vw);height:auto;display:block;margin:0 auto}
+.pic-sm{width:min(160px,42vw)}
+.pics svg{flex:0 0 auto}
+.pics{display:flex;flex-direction:column;gap:8px;align-items:center}
+table.tt{border-collapse:collapse;font-size:15px;background:#fff;border-radius:12px;overflow:hidden;
+  box-shadow:0 3px 0 var(--sh)}
+table.tt th{background:var(--blue);color:#fff;padding:6px 16px;font-weight:700;font-size:13px}
+table.tt td{padding:6px 16px;border-top:2px solid #F0E8DC;font-weight:600}
+
+/* answer box */
+.abox{display:flex;align-items:center;gap:6px;background:#fff;border-radius:16px;padding:9px 15px;
+  box-shadow:0 4px 0 var(--sh);font-size:26px;font-weight:700;min-width:150px;justify-content:center}
+.abox .cur{min-width:26px;border-bottom:4px solid var(--terra);padding:0 3px;text-align:center}
+.abox .cur:empty:before{content:'?';opacity:.22}
+.abox .un{font-size:16px;opacity:.6}
+.abox.wrong{animation:nudge .45s}
+@keyframes nudge{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+.abox.right{background:#E4F6EA;box-shadow:0 4px 0 #B9E2C8}
+
+/* keypad + choices */
+.pad{flex:0 0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:6px 14px calc(10px + env(safe-area-inset-bottom));
+  max-width:390px;margin:0 auto;width:100%}
+.key{background:#fff;border:none;border-radius:14px;padding:13px 0;font:inherit;font-size:22px;font-weight:700;
+  color:var(--ink);box-shadow:0 4px 0 var(--sh);cursor:pointer}
+.key:active{transform:translateY(3px);box-shadow:0 1px 0 var(--sh)}
+.key.go{grid-column:span 3;background:var(--sage);color:#fff;font-size:19px}
+.key.dim{background:#F4ECDF}
+.opts{flex:0 0 auto;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:6px 14px calc(12px + env(safe-area-inset-bottom));
+  max-width:430px;margin:0 auto;width:100%}
+.opt{background:#fff;border:none;border-radius:16px;padding:16px 8px;font:inherit;font-size:19px;font-weight:700;
+  color:var(--ink);box-shadow:0 4px 0 var(--sh);cursor:pointer}
+.opt:active{transform:translateY(3px);box-shadow:0 1px 0 var(--sh)}
+.opt.good{background:#DFF3E6;box-shadow:0 4px 0 #B4DEC4}
+.opt.bad{background:#FFE7E1;box-shadow:0 4px 0 #F3C6BA}
+
+/* helper / hint / solution */
+.helper{background:#FFF3D6;border-radius:16px;padding:11px 14px;font-size:14.5px;line-height:1.4;
+  max-width:520px;box-shadow:0 3px 0 #EBD9AE}
+.helper b{color:var(--terra)}
+.sol{background:#fff;border-radius:16px;padding:11px 14px;font-size:14.5px;line-height:1.55;
+  max-width:520px;box-shadow:0 3px 0 var(--sh)}
+.sol div{padding:2px 0}
+.sol div:before{content:'→ ';opacity:.45}
+.sol .tag.plain:before,.sol .ansline:before{content:''}
+.sol .ansline{margin-top:7px;font-weight:700}
+.tag{font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;opacity:.5}
+.reward{font-size:15px;font-weight:700;color:var(--sage)}
+.fly{position:fixed;font-size:20px;font-weight:700;pointer-events:none;z-index:90}
+
+/* ---------- bank ---------- */
+#bank{background:linear-gradient(180deg,#EAF2F8 0%,var(--cream) 55%)}
+.bankwrap{flex:1;overflow-y:auto;padding:4px 14px 24px;display:flex;flex-direction:column;gap:12px;align-items:center}
+.jar{width:min(190px,46vw)}
+.bigmoney{font-size:clamp(34px,11vw,52px);font-weight:700;line-height:1}
+.meter{width:100%;max-width:420px;height:16px;border-radius:16px;background:#E7DFD3;overflow:hidden;
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.08)}
+.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--mustard),var(--sage));border-radius:16px}
+.card{background:#fff;border-radius:18px;padding:13px 15px;box-shadow:0 4px 0 var(--sh);width:100%;max-width:420px}
+.card h3{font-size:15px;margin-bottom:6px}
+.row{display:flex;justify-content:space-between;font-size:14.5px;padding:3px 0}
+.row.tot{border-top:2px solid #F0E8DC;margin-top:5px;padding-top:7px;font-weight:700;font-size:16px}
+.muted{opacity:.6;font-size:13px;line-height:1.45}
+
+/* ---------- sheets ---------- */
+.sheet{position:fixed;inset:0;background:rgba(46,42,59,.4);display:none;align-items:flex-end;z-index:80}
+.sheet.on{display:flex}
+.sheet .inner{background:var(--cream);width:100%;max-height:90%;overflow-y:auto;border-radius:26px 26px 0 0;
+  padding:16px 15px calc(20px + env(safe-area-inset-bottom))}
+.skillrow{display:flex;align-items:center;gap:8px;font-size:14px;padding:5px 0;border-bottom:1px solid #EFE6D8}
+.skillrow .bar{flex:1;height:9px;border-radius:9px;background:#E7DFD3;overflow:hidden}
+.skillrow .bar i{display:block;height:100%;background:var(--sage)}
+.skillrow .st{width:20px;text-align:center}
+input[type=range]{width:100%}
+.seg{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.seg button{background:#fff;border:none;border-radius:13px;padding:7px 12px;font:inherit;font-size:13.5px;
+  font-weight:700;color:var(--ink);box-shadow:0 3px 0 var(--sh)}
+.seg button.off{opacity:.38}
+.pindots{display:flex;gap:14px;justify-content:center;margin:20px 0 14px}
+.pindots span{width:18px;height:18px;border-radius:50%;background:#E7DFD3;box-shadow:inset 0 2px 3px rgba(0,0,0,.1)}
+.pindots span.on{background:var(--plum)}
+.pindots.shakepin{animation:nudge .45s}
+.pad.pinpad{padding-bottom:6px}
+
+/* ---------- celebration ---------- */
+#cheer{position:fixed;inset:0;display:none;place-items:center;background:rgba(255,246,234,.95);z-index:85;
+  flex-direction:column;gap:12px;text-align:center;padding:22px}
+#cheer.on{display:flex;align-items:center;justify-content:center}
+.conf{position:fixed;width:9px;height:13px;border-radius:2px;pointer-events:none;z-index:95}
+</style>
+</head>
+<body>
+
+<!-- ================= TOWN MAP ================= -->
+<section id="map" class="screen on">
+  <div class="purse">
+    <span class="pill" id="pCoins">🪙 <b>0</b></span>
+    <span class="pill" id="pSave">🏦 <b>£0.00</b></span>
+    <span class="pill risk" id="pPurse">👛 <b>10p</b></span>
+    <span class="grow"></span>
+    <button class="ico" id="btnGrown">⚙️</button>
+  </div>
+  <div id="townwrap">
+    <div id="skyline"></div>
+    <div class="welcome">
+      <h1>Isabel Leyla's Number Town</h1>
+      <p id="welcomeLine">Where shall we work today?</p>
+    </div>
+    <div class="shops" id="shops"></div>
+    <div class="mapfoot">
+      <button class="btn blue sm" id="btnBank">🏦 My money</button>
+      <button class="btn mustard sm" id="btnPayday">🧾 Payday</button>
+    </div>
+    <div id="street"></div>
+  </div>
+</section>
+
+<!-- ================= SHOP / QUESTIONS ================= -->
+<section id="shop" class="screen">
+  <div class="shophead">
+    <button class="ico" data-back="map">←</button>
+    <div class="who" id="keeperPic"></div>
+    <div class="grow">
+      <div class="ttl" id="shopName"></div>
+      <div class="sub" id="shopSub"></div>
+    </div>
+    <span class="pill" id="sCoins">🪙 <b>0</b></span>
+  </div>
+  <div class="qwrap" id="qwrap"></div>
+  <div id="answerArea"></div>
+</section>
+
+<!-- ================= BANK ================= -->
+<section id="bank" class="screen">
+  <div class="purse">
+    <button class="ico" data-back="map">←</button>
+    <h2 style="font-size:18px">My money</h2>
+    <span class="grow"></span>
+  </div>
+  <div class="bankwrap" id="bankwrap"></div>
+</section>
+
+<!-- ================= GROWN-UPS ================= -->
+<div class="sheet" id="grownSheet">
+  <div class="inner" id="grownInner"></div>
+</div>
+
+<div id="cheer"></div>
+
+<script>
+/* ============================================================
+   Isabel Leyla's Number Town — skills & question generators
+   Curriculum: CfE Second Level (Scotland, P5)
+
+   Every skill is a generator, so the questions are never the same
+   twice. Each generated question looks like:
+
+   { q      : prompt text
+     svg    : optional picture (string of SVG markup)
+     kind   : 'num' | 'choice' | 'shade' | 'coins'
+     keys   : 'num' | 'dec' | 'time'   (which keypad to show)
+     ans    : correct answer (string, compared loosely)
+     alt    : [other acceptable strings]
+     opts   : [choices]  (kind === 'choice')
+     unit   : text shown after the answer box
+     hint   : sentence + optional picture shown after a wrong try
+     hintSvg: optional picture for the hint
+     steps  : ['worked', 'solution', 'lines']
+     shade  : {parts, need}  (kind === 'shade')
+     coins  : {target}       (kind === 'coins', target in pence) }
+   ============================================================ */
+
+const SHOPS = [
+  { id:'bakery',  name:'The Bakery',    emoji:'🥐', keeper:'Pia',   topic:'Fractions, decimals & percentages' },
+  { id:'market',  name:'The Market',    emoji:'🛒', keeper:'Gus',   topic:'Money and the four operations' },
+  { id:'cafe',    name:'The Cat Café',  emoji:'🐾', keeper:'Nour',  topic:'Multiplication & division' },
+  { id:'station', name:'The Station',   emoji:'🚂', keeper:'Bram',  topic:'Time, timetables & calendars' }
+];
+
+/* ---------- little helpers ---------- */
+function ri(r,a,b){ return a + Math.floor(r()*(b-a+1)); }
+function pick(r,a){ return a[Math.floor(r()*a.length)]; }
+function shuf(r,a){ a=a.slice(); for(var i=a.length-1;i>0;i--){var j=Math.floor(r()*(i+1)),t=a[i];a[i]=a[j];a[j]=t;} return a; }
+function gcd(a,b){ return b?gcd(b,a%b):a; }
+function pounds(p){ var s=(p<0?'-':''); p=Math.abs(p); return s+'£'+Math.floor(p/100)+'.'+String(p%100).padStart(2,'0'); }
+function pence(p){ return p<100 ? p+'p' : pounds(p); }
+function two(n){ return String(n).padStart(2,'0'); }
+function hhmm(m){ m=((m%1440)+1440)%1440; return two(Math.floor(m/60))+':'+two(m%60); }
+function ampm(m){
+  m=((m%1440)+1440)%1440; var h=Math.floor(m/60), mm=m%60, s=h<12?'am':'pm';
+  var h12=h%12===0?12:h%12; return h12+':'+two(mm)+s;
+}
+/* build a set of wrong-but-plausible choices around the right one */
+function choicesAround(r, correct, makers){
+  var set = [String(correct)];
+  var guard = 0;
+  while(set.length<4 && guard++<40){
+    var c = String(makers[Math.floor(r()*makers.length)]());
+    if(set.indexOf(c)<0 && c!=='NaN' && c!=='') set.push(c);
+  }
+  return shuf(r,set);
+}
+
+/* ---------- pictures ---------- */
+function barSVG(parts, shaded, w, colour){
+  w = w||280; var h=54, seg=w/parts, out='';
+  for(var i=0;i<parts;i++){
+    out += '<rect x="'+(i*seg)+'" y="0" width="'+seg+'" height="'+h+'" rx="6" '+
+           'fill="'+(i<shaded?(colour||'#E4694A'):'#FFF6EA')+'" stroke="#2E2A3B" stroke-width="3"/>';
+  }
+  return '<svg viewBox="0 0 '+w+' '+h+'" class="pic">'+out+'</svg>';
+}
+function pieSVG(parts, shaded){
+  var out='', cx=60, cy=60, rr=52;
+  for(var i=0;i<parts;i++){
+    var a0=(i/parts)*2*Math.PI - Math.PI/2, a1=((i+1)/parts)*2*Math.PI - Math.PI/2;
+    var x0=cx+rr*Math.cos(a0), y0=cy+rr*Math.sin(a0), x1=cx+rr*Math.cos(a1), y1=cy+rr*Math.sin(a1);
+    var large=(a1-a0)>Math.PI?1:0;
+    out += '<path d="M'+cx+' '+cy+' L'+x0+' '+y0+' A'+rr+' '+rr+' 0 '+large+' 1 '+x1+' '+y1+' Z" '+
+           'fill="'+(i<shaded?'#F2B33D':'#FFF6EA')+'" stroke="#2E2A3B" stroke-width="3"/>';
+  }
+  return '<svg viewBox="0 0 120 120" class="pic pic-sm">'+out+'</svg>';
+}
+function arraySVG(rows, cols){
+  var s=18, g=6, w=cols*(s+g)+g, h=rows*(s+g)+g, out='';
+  out += '<rect x="0" y="0" width="'+w+'" height="'+h+'" rx="10" fill="#FFF6EA" stroke="#2E2A3B" stroke-width="3"/>';
+  for(var y=0;y<rows;y++) for(var x=0;x<cols;x++)
+    out += '<circle cx="'+(g+s/2+x*(s+g))+'" cy="'+(g+s/2+y*(s+g))+'" r="'+(s/2-1)+'" fill="#6FB98F"/>';
+  return '<svg viewBox="0 0 '+w+' '+h+'" class="pic">'+out+'</svg>';
+}
+function clockSVG(mins){
+  var h=Math.floor(mins/60)%12, m=mins%60;
+  var ha=(h+m/60)/12*2*Math.PI - Math.PI/2, ma=(m/60)*2*Math.PI - Math.PI/2;
+  var t='';
+  for(var i=0;i<12;i++){
+    var a=i/12*2*Math.PI - Math.PI/2;
+    t += '<text x="'+(60+42*Math.cos(a))+'" y="'+(60+42*Math.sin(a)+5)+'" font-size="13" font-weight="800" '+
+         'text-anchor="middle" fill="#2E2A3B">'+(i===0?12:i)+'</text>';
+  }
+  for(var k=0;k<60;k++){
+    var b=k/60*2*Math.PI - Math.PI/2, r0=k%5===0?52:54;
+    t += '<line x1="'+(60+r0*Math.cos(b))+'" y1="'+(60+r0*Math.sin(b))+'" x2="'+(60+56*Math.cos(b))+'" y2="'+(60+56*Math.sin(b))+'" stroke="#2E2A3B" stroke-width="'+(k%5===0?2.5:1)+'"/>';
+  }
+  return '<svg viewBox="0 0 120 120" class="pic pic-sm">'+
+    '<circle cx="60" cy="60" r="57" fill="#FFF6EA" stroke="#2E2A3B" stroke-width="4"/>'+t+
+    '<line x1="60" y1="60" x2="'+(60+28*Math.cos(ha))+'" y2="'+(60+28*Math.sin(ha))+'" stroke="#2E2A3B" stroke-width="6" stroke-linecap="round"/>'+
+    '<line x1="60" y1="60" x2="'+(60+42*Math.cos(ma))+'" y2="'+(60+42*Math.sin(ma))+'" stroke="#E4694A" stroke-width="4" stroke-linecap="round"/>'+
+    '<circle cx="60" cy="60" r="4.5" fill="#2E2A3B"/></svg>';
+}
+function numberLineSVG(from, to, mark){
+  var w=300, pad=18, span=to-from, x=function(v){ return pad+(v-from)/span*(w-2*pad); };
+  var t='<line x1="'+pad+'" y1="30" x2="'+(w-pad)+'" y2="30" stroke="#2E2A3B" stroke-width="3"/>';
+  for(var i=0;i<=span;i++){
+    t += '<line x1="'+x(from+i)+'" y1="24" x2="'+x(from+i)+'" y2="36" stroke="#2E2A3B" stroke-width="2"/>'+
+         '<text x="'+x(from+i)+'" y="52" font-size="12" font-weight="700" text-anchor="middle" fill="#2E2A3B">'+(from+i)+'</text>';
+  }
+  if(mark!=null) t += '<circle cx="'+x(mark)+'" cy="30" r="7" fill="#E4694A"/>';
+  return '<svg viewBox="0 0 '+w+' 60" class="pic">'+t+'</svg>';
+}
+
+/* a two-end number line with the value marked between them */
+function roundLineSVG(lo, hi, val){
+  var w=300, pad=30, x=function(v){ return pad+(v-lo)/(hi-lo)*(w-2*pad); };
+  var mid=(lo+hi)/2;
+  return '<svg viewBox="0 0 '+w+' 64" class="pic">'+
+    '<line x1="'+pad+'" y1="30" x2="'+(w-pad)+'" y2="30" stroke="#2E2A3B" stroke-width="3"/>'+
+    '<line x1="'+x(lo)+'" y1="20" x2="'+x(lo)+'" y2="40" stroke="#2E2A3B" stroke-width="3"/>'+
+    '<line x1="'+x(hi)+'" y1="20" x2="'+x(hi)+'" y2="40" stroke="#2E2A3B" stroke-width="3"/>'+
+    '<line x1="'+x(mid)+'" y1="24" x2="'+x(mid)+'" y2="36" stroke="#B9AFA2" stroke-width="2" stroke-dasharray="3 3"/>'+
+    '<text x="'+x(lo)+'" y="58" font-size="13" font-weight="800" text-anchor="middle" fill="#2E2A3B">'+lo+'</text>'+
+    '<text x="'+x(hi)+'" y="58" font-size="13" font-weight="800" text-anchor="middle" fill="#2E2A3B">'+hi+'</text>'+
+    '<circle cx="'+x(val)+'" cy="30" r="7" fill="#E4694A"/>'+
+    '<text x="'+x(val)+'" y="16" font-size="12" font-weight="800" text-anchor="middle" fill="#E4694A">'+val+'</text>'+
+  '</svg>';
+}
+
+/* ============================================================
+   THE SKILLS
+   ============================================================ */
+const SKILLS = [
+
+/* ---------------- 🥐 BAKERY — fractions, decimals, percentages ---------------- */
+{ id:'bk1', shop:'bakery', name:'Naming fractions', gen:function(r){
+  var parts = pick(r,[2,3,4,5,6,8,10]), sh = ri(r,1,parts-1);
+  var g = gcd(sh,parts);
+  return { q:'Pia has iced part of this tray. What fraction is iced?',
+    svg: barSVG(parts, sh), kind:'num', keys:'frac', ans: sh+'/'+parts,
+    alt: g>1 ? [(sh/g)+'/'+(parts/g)] : [],
+    hint:'Count ALL the pieces for the bottom number, then count the iced ones for the top.',
+    steps:['The tray is cut into '+parts+' equal pieces → bottom number is '+parts+'.',
+           sh+' of them are iced → top number is '+sh+'.',
+           'So the answer is '+sh+'/'+parts+'.'] };
+}},
+
+{ id:'bk2', shop:'bakery', name:'Equivalent fractions', gen:function(r){
+  var a=pick(r,[1,1,1,2,3]), b=pick(r,[2,3,4,5]), k=ri(r,2,4);
+  if(a>=b){ a=1; b=pick(r,[2,3,4]); }
+  return { q:'Fill in the missing number:  '+a+'/'+b+'  =  ?/'+(b*k),
+    svg: barSVG(b, a, 260)+barSVG(b*k, a*k, 260, '#F2B33D'),
+    kind:'num', keys:'num', ans:String(a*k),
+    hint:'The bottom went from '+b+' to '+(b*k)+'. What did you multiply by? Do the same to the top.',
+    steps:[b+' × '+k+' = '+(b*k)+', so the bottom was multiplied by '+k+'.',
+           'Do the same on top: '+a+' × '+k+' = '+(a*k)+'.',
+           a+'/'+b+' = '+(a*k)+'/'+(b*k)] };
+}},
+
+{ id:'bk3', shop:'bakery', name:'Fraction of an amount', gen:function(r){
+  var b=pick(r,[2,3,4,5,6,8,10]), a=ri(r,1,b-1), unit=pick(r,[8,10,12,16,20,24,30,40,48,60]);
+  var total = unit*b/gcd(unit,1); total = b*Math.max(2,Math.round(unit/b));
+  var one = total/b, ansv = one*a;
+  return { q:'There are '+total+' buns on the rack. How many is '+a+'/'+b+' of them?',
+    kind:'num', keys:'num', ans:String(ansv), unit:'buns',
+    hint:'First share the '+total+' buns into '+b+' equal groups. Then take '+a+' of those groups.',
+    steps:[total+' ÷ '+b+' = '+one+'  (that is 1/'+b+')',
+           one+' × '+a+' = '+ansv+'  (that is '+a+'/'+b+')'] };
+}},
+
+{ id:'bk4', shop:'bakery', name:'Comparing fractions', gen:function(r){
+  var pairs=[[1,2,1,3],[3,4,2,3],[2,5,1,2],[5,8,1,2],[3,5,7,10],[2,3,3,4],[1,4,3,8],[5,6,7,8]];
+  var p=pick(r,pairs); if(r()<0.5) p=[p[2],p[3],p[0],p[1]];
+  var v1=p[0]/p[1], v2=p[2]/p[3];
+  var big = v1>v2 ? p[0]+'/'+p[1] : p[2]+'/'+p[3];
+  return { q:'Which slice is bigger?',
+    svg: barSVG(p[1],p[0],260)+barSVG(p[3],p[2],260,'#6FB98F'),
+    kind:'choice', opts: shuf(r,[p[0]+'/'+p[1], p[2]+'/'+p[3]]), ans:big,
+    hint:'Look at the two bars. Which one has more colour in it?',
+    steps:[p[0]+'/'+p[1]+' = '+(Math.round(v1*100))+'%',
+           p[2]+'/'+p[3]+' = '+(Math.round(v2*100))+'%',
+           'So '+big+' is bigger.'] };
+}},
+
+{ id:'bk5', shop:'bakery', name:'Adding fractions', gen:function(r){
+  var b=pick(r,[4,5,6,8,10]), a=ri(r,1,b-2), c=ri(r,1,b-a-0);
+  if(a+c>b) c=b-a;
+  var s=a+c, g=gcd(s,b);
+  var whole = (s===b);
+  var simp = whole ? ' — that is the whole tart!' : (g>1 ? (' = '+(s/g)+'/'+(b/g)) : '');
+  var alts = whole ? ['1'] : (g>1 ? [(s/g)+'/'+(b/g)] : []);
+  return { q:'Pia eats '+a+'/'+b+' of a tart, then '+c+'/'+b+' more. How much has she eaten altogether?',
+    svg: barSVG(b, a, 260)+barSVG(b, c, 260, '#F2B33D'),
+    kind:'num', keys:'frac', ans:s+'/'+b, alt: alts,
+    hint:'The pieces are the same size, so just add the top numbers. The bottom stays '+b+'.',
+    steps:['Bottom numbers match, so keep '+b+'.',
+           a+' + '+c+' = '+s,
+           'Answer: '+s+'/'+b+simp] };
+}},
+
+{ id:'bk6', shop:'bakery', name:'Fractions to decimals', gen:function(r){
+  var set=[['1/2','0.5'],['1/4','0.25'],['3/4','0.75'],['1/10','0.1'],['3/10','0.3'],['7/10','0.7'],
+           ['1/5','0.2'],['2/5','0.4'],['3/5','0.6'],['4/5','0.8'],['1/100','0.01'],['25/100','0.25']];
+  var p=pick(r,set);
+  return { q:'Write '+p[0]+' as a decimal.', kind:'num', keys:'dec', ans:p[1],
+    hint:'A decimal is just "how much out of one". Think about tenths and hundredths.',
+    steps:[p[0]+' means '+p[0].split('/')[0]+' out of '+p[0].split('/')[1]+'.',
+           'As a decimal that is '+p[1]+'.'] };
+}},
+
+{ id:'bk7', shop:'bakery', name:'Fractions to percentages', gen:function(r){
+  var set=[['1/2',50],['1/4',25],['3/4',75],['1/10',10],['3/10',30],['9/10',90],
+           ['1/5',20],['2/5',40],['3/5',60],['4/5',80],['1/1',100],['1/20',5]];
+  var p=pick(r,set);
+  return { q:'What is '+p[0]+' as a percentage?', kind:'num', keys:'num', ans:String(p[1]), unit:'%',
+    svg: barSVG(10, Math.round(p[1]/10), 280, '#8D6BA0'),
+    hint:'Per cent means "out of 100". How many hundredths is '+p[0]+'?',
+    steps:[p[0]+' of 100 = '+p[1], 'So '+p[0]+' = '+p[1]+'%.'] };
+}},
+
+{ id:'bk8', shop:'bakery', name:'Percentage of an amount', gen:function(r){
+  var pc=pick(r,[10,20,25,50,75,5]), n=pick(r,[20,40,60,80,120,200,240,300,400]);
+  var ansv = n*pc/100;
+  if(!Number.isInteger(ansv)) { n=200; ansv=n*pc/100; }
+  return { q:'A tray of '+n+' biscuits. How many is '+pc+'%?',
+    kind:'num', keys:'num', ans:String(ansv), unit:'biscuits',
+    hint:'10% is just the amount ÷ 10. Build up from there.',
+    steps:['10% of '+n+' = '+(n/10),
+           pc+'% is '+(pc/10)+' lots of 10%.',
+           (n/10)+' × '+(pc/10)+' = '+ansv] };
+}},
+
+/* ---------------- 🛒 MARKET — money & four operations ---------------- */
+{ id:'mk1', shop:'market', name:'Adding money', gen:function(r){
+  var a=ri(r,45,850), b=ri(r,45,850);
+  return { q:'Gus sells a '+pick(r,['loaf','melon','jar of jam','bag of apples'])+' for '+pounds(a)+
+             ' and a '+pick(r,['pot of honey','cabbage','box of eggs','bunch of grapes'])+' for '+pounds(b)+
+             '. How much altogether?',
+    kind:'num', keys:'dec', ans:(( a+b)/100).toFixed(2), unit:'£',
+    hint:'Line up the pounds with the pounds and the pence with the pence.',
+    steps:[pounds(a)+' + '+pounds(b),
+           'Pence: '+(a%100)+' + '+(b%100)+' = '+((a%100)+(b%100)),
+           'Total = '+pounds(a+b)] };
+}},
+
+{ id:'mk2', shop:'market', name:'Giving change', gen:function(r){
+  var paid=pick(r,[500,1000,2000]), cost=ri(r,Math.floor(paid*0.25), paid-15);
+  return { q:'The shopping comes to '+pounds(cost)+'. Isabel Leyla pays with '+pounds(paid)+
+             '. How much change?',
+    kind:'num', keys:'dec', ans:((paid-cost)/100).toFixed(2), unit:'£',
+    hint:'Count up from '+pounds(cost)+' to '+pounds(paid)+' — that is easier than taking away.',
+    steps:['Count up to the next pound: '+pounds(cost)+' → '+pounds(Math.ceil(cost/100)*100)+' is '+
+             pence(Math.ceil(cost/100)*100-cost),
+           'Then up to '+pounds(paid)+': '+pounds(paid-Math.ceil(cost/100)*100),
+           'Change = '+pounds(paid-cost)] };
+}},
+
+{ id:'mk3', shop:'market', name:'Multiplying money', gen:function(r){
+  var each=pick(r,[35,45,60,75,80,99,125,150,199,225,250]), n=ri(r,3,8);
+  return { q:n+' pots of '+pick(r,['yoghurt','soup','olives','tomatoes'])+' at '+pence(each)+' each. What is the total?',
+    kind:'num', keys:'dec', ans:((each*n)/100).toFixed(2), unit:'£',
+    hint:'Multiply the pence first, then turn the answer back into pounds.',
+    steps:[each+'p × '+n+' = '+(each*n)+'p',
+           (each*n)+'p = '+pounds(each*n)] };
+}},
+
+{ id:'mk4', shop:'market', name:'Sharing the cost', gen:function(r){
+  var n=pick(r,[2,3,4,5,6]), each=pick(r,[45,60,80,125,150,240,320]), total=each*n;
+  return { q:n+' friends share a '+pounds(total)+' fruit box equally. How much does each pay?',
+    kind:'num', keys:'dec', ans:(each/100).toFixed(2), unit:'£',
+    hint:'Divide the total by '+n+'. Try dividing the pence: '+total+'p ÷ '+n+'.',
+    steps:[total+'p ÷ '+n+' = '+each+'p', each+'p = '+pounds(each)] };
+}},
+
+{ id:'mk5', shop:'market', name:'Best value', gen:function(r){
+  var unitA=pick(r,[40,50,60,75,80]), nA=pick(r,[2,3,4]);
+  var unitB=unitA+pick(r,[-12,-8,-6,6,8,12]), nB=pick(r,[2,3,5,6]);
+  var pa=unitA*nA, pb=unitB*nB;
+  var best = unitA<unitB ? (nA+' for '+pence(pa)) : (nB+' for '+pence(pb));
+  return { q:'Which pack of eggs is better value?',
+    kind:'choice', opts: shuf(r,[nA+' for '+pence(pa), nB+' for '+pence(pb)]), ans:best,
+    hint:'Work out what ONE egg costs in each pack, then compare.',
+    steps:[pence(pa)+' ÷ '+nA+' = '+unitA+'p each',
+           pence(pb)+' ÷ '+nB+' = '+unitB+'p each',
+           'So '+best+' is better value.'] };
+}},
+
+{ id:'mk6', shop:'market', name:'Column addition', gen:function(r){
+  var a=ri(r,1200,9800), b=ri(r,1200,9800);
+  return { q:'Add these:  '+a+' + '+b,
+    kind:'num', keys:'num', ans:String(a+b),
+    hint:'Start with the ones column on the right and carry over as you go.',
+    steps:['Ones: '+(a%10)+' + '+(b%10),
+           'Then tens, hundreds, thousands — carrying each time.',
+           a+' + '+b+' = '+(a+b)] };
+}},
+
+{ id:'mk7', shop:'market', name:'Two-step problems', gen:function(r){
+  var each=pick(r,[85,120,150,199,250]), n=ri(r,3,6), paid=pick(r,[1000,2000]);
+  var total=each*n;
+  if(total>=paid) { each=85; total=each*n; paid=2000; }
+  return { q:'Gus buys '+n+' baskets at '+pence(each)+' each and pays with '+pounds(paid)+
+             '. How much change does he get?',
+    kind:'num', keys:'dec', ans:((paid-total)/100).toFixed(2), unit:'£',
+    hint:'Two steps: first the total cost, then the change.',
+    steps:['Step 1: '+each+'p × '+n+' = '+pounds(total),
+           'Step 2: '+pounds(paid)+' − '+pounds(total)+' = '+pounds(paid-total)] };
+}},
+
+{ id:'mk8', shop:'market', name:'Rounding & estimating', gen:function(r){
+  var a=ri(r,1150,8850), to=pick(r,[10,100,1000]);
+  var ansv = Math.round(a/to)*to;
+  return { q:'Round '+a+' to the nearest '+to+'.',
+    svg: roundLineSVG(Math.floor(a/to)*to, Math.ceil(a/to)*to, a),
+    kind:'num', keys:'num', ans:String(ansv),
+    hint:'Look at the digit just after the place you are rounding to. 5 or more rounds up.',
+    steps:[a+' sits between '+(Math.floor(a/to)*to)+' and '+(Math.ceil(a/to)*to)+'.',
+           'It is closer to '+ansv+'.'] };
+}},
+
+/* ---------------- 🐾 CAT CAFÉ — multiplication & division ---------------- */
+{ id:'cf1', shop:'cafe', name:'Times tables', gen:function(r){
+  var a=ri(r,2,12), b=ri(r,2,12);
+  return { q:'Nour needs '+a+' bowls with '+b+' treats in each. How many treats?',
+    svg: (a<=8&&b<=8)? arraySVG(a,b) : '',
+    kind:'num', keys:'num', ans:String(a*b), unit:'treats',
+    hint:'Count in '+b+'s, '+a+' times — or use a fact you already know and build on it.',
+    steps:[a+' × '+b+' = '+(a*b)] };
+}},
+
+{ id:'cf2', shop:'cafe', name:'Division facts', gen:function(r){
+  var b=ri(r,2,12), q=ri(r,2,12), a=b*q;
+  return { q:a+' cat treats shared equally into '+b+' bowls. How many in each bowl?',
+    kind:'num', keys:'num', ans:String(q), unit:'each',
+    hint:'Ask yourself: '+b+' times what makes '+a+'?',
+    steps:[b+' × '+q+' = '+a, 'So '+a+' ÷ '+b+' = '+q] };
+}},
+
+{ id:'cf3', shop:'cafe', name:'Multiplying by 10, 100, 1000', gen:function(r){
+  var a=ri(r,12,99)*pick(r,[1,1,1,10]), k=pick(r,[10,100,1000]);
+  return { q:'What is '+a+' × '+k+'?',
+    kind:'num', keys:'num', ans:String(a*k),
+    hint:'The digits do not change — they just slide up to bigger columns.',
+    steps:['× '+k+' moves every digit '+(String(k).length-1)+' place(s) to the left.',
+           a+' × '+k+' = '+(a*k)] };
+}},
+
+{ id:'cf4', shop:'cafe', name:'2-digit × 1-digit', gen:function(r){
+  var a=ri(r,13,49), b=ri(r,3,9);
+  var t=Math.floor(a/10)*10, o=a%10;
+  return { q:'What is '+a+' × '+b+'?',
+    kind:'num', keys:'num', ans:String(a*b),
+    hint:'Split '+a+' into '+t+' and '+o+', multiply each bit, then add them.',
+    steps:[t+' × '+b+' = '+(t*b), o+' × '+b+' = '+(o*b),
+           (t*b)+' + '+(o*b)+' = '+(a*b)] };
+}},
+
+{ id:'cf5', shop:'cafe', name:'Division with remainders', gen:function(r){
+  var b=ri(r,3,9), q=ri(r,4,15), rem=ri(r,1,b-1), a=b*q+rem;
+  return { q:a+' biscuits into bags of '+b+'. How many are left over?',
+    kind:'num', keys:'num', ans:String(rem), unit:'left over',
+    hint:'How many full bags of '+b+' can you make? Whatever will not fill a bag is the remainder.',
+    steps:[b+' × '+q+' = '+(b*q),
+           a+' − '+(b*q)+' = '+rem,
+           'So '+a+' ÷ '+b+' = '+q+' remainder '+rem] };
+}},
+
+{ id:'cf6', shop:'cafe', name:'2-digit × 2-digit', gen:function(r){
+  var a=ri(r,12,39), b=ri(r,11,25);
+  var bt=Math.floor(b/10)*10, bo=b%10;
+  return { q:'What is '+a+' × '+b+'?',
+    kind:'num', keys:'num', ans:String(a*b),
+    hint:'Split '+b+' into '+bt+' and '+bo+'. Do two easier multiplications, then add.',
+    steps:[a+' × '+bt+' = '+(a*bt), a+' × '+bo+' = '+(a*bo),
+           (a*bt)+' + '+(a*bo)+' = '+(a*b)] };
+}},
+
+{ id:'cf7', shop:'cafe', name:'Factors', gen:function(r){
+  var n=pick(r,[12,16,18,20,24,28,30,36,40,42,45,48,50,54,56,60]);
+  var facs=[]; for(var i=1;i<=n;i++) if(n%i===0) facs.push(i);
+  var notFac=[]; for(var j=2;j<=20;j++) if(n%j!==0) notFac.push(j);
+  var wrong=pick(r,notFac), right=pick(r,facs.filter(function(f){return f>1&&f<n;}));
+  var opts=shuf(r,[String(right),String(wrong),String(pick(r,notFac.filter(function(x){return x!=wrong;})))]);
+  return { q:'Which of these is a factor of '+n+'?',
+    kind:'choice', opts:opts, ans:String(right),
+    hint:'A factor divides in exactly, with nothing left over.',
+    steps:[n+' ÷ '+right+' = '+(n/right)+' — no remainder, so '+right+' is a factor.',
+           n+' ÷ '+wrong+' does not divide exactly.'] };
+}},
+
+{ id:'cf8', shop:'cafe', name:'Multiples', gen:function(r){
+  var b=ri(r,3,9), k=ri(r,4,12), n=b*k;
+  var opts=shuf(r,[String(n), String(n+1), String(n+b-1), String(n-2)]);
+  return { q:'Which number is a multiple of '+b+'?',
+    kind:'choice', opts:opts, ans:String(n),
+    hint:'Count in '+b+'s and see which one you land on.',
+    steps:[b+' × '+k+' = '+n, 'So '+n+' is in the '+b+' times table.'] };
+}},
+
+/* ---------------- 🚂 STATION — time ---------------- */
+{ id:'st1', shop:'station', name:'Reading a clock', gen:function(r){
+  var h=ri(r,1,12), m=pick(r,[0,5,10,15,20,25,30,35,40,45,50,55,7,13,22,38,49]);
+  var mins=(h%12)*60+m;
+  return { q:'What time does the station clock show?',
+    svg: clockSVG(mins), kind:'num', keys:'time', ans:two(h%12===0?12:h%12)+':'+two(m),
+    alt:[ (h%12===0?12:h%12)+':'+two(m) ],
+    hint:'The short hand gives the hour. The long red hand counts the minutes — each small mark is one minute.',
+    steps:['Short hand is just past '+(h%12===0?12:h%12)+'.',
+           'Long hand is on '+m+' minutes.',
+           'So the time is '+two(h%12===0?12:h%12)+':'+two(m)+'.'] };
+}},
+
+{ id:'st2', shop:'station', name:'12-hour to 24-hour', gen:function(r){
+  var h=ri(r,1,11), m=pick(r,[0,5,15,20,30,40,45,50]), pm=r()<0.6;
+  var h24 = pm ? h+12 : h;
+  return { q:'The train leaves at '+h+':'+two(m)+(pm?'pm':'am')+'. Write that in 24-hour time.',
+    kind:'num', keys:'time', ans:two(h24)+':'+two(m),
+    hint: pm ? 'After midday, add 12 to the hour.' : 'Before midday, the hour stays the same — just add a leading zero.',
+    steps: pm ? [h+' + 12 = '+h24, 'So '+h+':'+two(m)+'pm = '+two(h24)+':'+two(m)]
+              : ['Morning times keep the same hour.', 'So '+h+':'+two(m)+'am = '+two(h24)+':'+two(m)] };
+}},
+
+{ id:'st3', shop:'station', name:'How long does it take?', gen:function(r){
+  var start=ri(r,6,20)*60+pick(r,[0,5,10,15,20,25,30,35,40,45,50,55]);
+  var dur=pick(r,[25,35,40,45,50,55,70,80,95,110,125]);
+  var end=start+dur;
+  return { q:'The train leaves at '+hhmm(start)+' and arrives at '+hhmm(end)+'. How long is the journey, in minutes?',
+    kind:'num', keys:'num', ans:String(dur), unit:'minutes',
+    hint:'Jump to the next whole hour first, then count the rest.',
+    steps:['From '+hhmm(start)+' to '+hhmm(Math.ceil(start/60)*60)+' is '+(Math.ceil(start/60)*60-start)+' min.',
+           'From '+hhmm(Math.ceil(start/60)*60)+' to '+hhmm(end)+' is '+(end-Math.ceil(start/60)*60)+' min.',
+           'Total = '+dur+' minutes.'] };
+}},
+
+{ id:'st4', shop:'station', name:'Arrival times', gen:function(r){
+  var start=ri(r,6,21)*60+pick(r,[0,10,15,20,25,35,40,45,50]);
+  var dur=pick(r,[35,45,50,55,75,90,105,140]);
+  return { q:'A train leaves at '+hhmm(start)+' and the trip takes '+dur+' minutes. What time does it arrive? (24-hour)',
+    kind:'num', keys:'time', ans:hhmm(start+dur),
+    hint:'Add the whole hours first, then the leftover minutes.',
+    steps:[dur+' minutes = '+Math.floor(dur/60)+' h '+(dur%60)+' min.',
+           hhmm(start)+' + '+Math.floor(dur/60)+' h = '+hhmm(start+Math.floor(dur/60)*60),
+           '+ '+(dur%60)+' min = '+hhmm(start+dur)] };
+}},
+
+{ id:'st5', shop:'station', name:'Reading a timetable', gen:function(r){
+  var stops=['Bramford','Willow Bay','Hollytown','Marchmill'];
+  var t0=ri(r,7,18)*60+pick(r,[0,12,20,35,48]);
+  var gaps=[ri(r,12,25), ri(r,15,30), ri(r,10,22)];
+  var times=[t0, t0+gaps[0], t0+gaps[0]+gaps[1], t0+gaps[0]+gaps[1]+gaps[2]];
+  var i=ri(r,0,2);
+  var rows = stops.map(function(s,k){ return '<tr><td>'+s+'</td><td>'+hhmm(times[k])+'</td></tr>'; }).join('');
+  return { q:'How many minutes from '+stops[i]+' to '+stops[i+1]+'?',
+    svg:'<table class="tt"><tr><th>Stop</th><th>Time</th></tr>'+rows+'</table>',
+    kind:'num', keys:'num', ans:String(times[i+1]-times[i]), unit:'minutes',
+    hint:'Find both stops in the table and count the minutes between the two times.',
+    steps:[stops[i]+' at '+hhmm(times[i]),
+           stops[i+1]+' at '+hhmm(times[i+1]),
+           'Difference = '+(times[i+1]-times[i])+' minutes'] };
+}},
+
+{ id:'st6', shop:'station', name:'Units of time', gen:function(r){
+  var set=[['minutes in 3 hours',180],['hours in 2 days',48],['days in 4 weeks',28],
+           ['minutes in a quarter of an hour',15],['seconds in 4 minutes',240],
+           ['months in 3 years',36],['hours in half a day',12],['minutes in 2 and a half hours',150],
+           ['days in September',30],['days in a leap year',366]];
+  var p=pick(r,set);
+  return { q:'How many '+p[0]+'?', kind:'num', keys:'num', ans:String(p[1]),
+    hint:'1 hour = 60 minutes · 1 day = 24 hours · 1 week = 7 days · 1 year = 12 months.',
+    steps:[p[0].charAt(0).toUpperCase()+p[0].slice(1)+' = '+p[1]] };
+}},
+
+{ id:'st7', shop:'station', name:'Crossing midnight', gen:function(r){
+  var start=ri(r,21,23)*60+pick(r,[0,10,20,30,40,50]);
+  var dur=pick(r,[40,55,70,85,100,130]);
+  return { q:'A night train leaves at '+hhmm(start)+' and takes '+dur+' minutes. What time does it arrive? (24-hour)',
+    kind:'num', keys:'time', ans:hhmm(start+dur),
+    hint:'Count up to 00:00 first, then carry on into the next day.',
+    steps:['From '+hhmm(start)+' to 00:00 is '+(1440-start)+' minutes.',
+           dur+' − '+(1440-start)+' = '+(dur-(1440-start))+' minutes after midnight.',
+           'Arrives at '+hhmm(start+dur)+'.'] };
+}},
+
+{ id:'st8', shop:'station', name:'Calendar work', gen:function(r){
+  var months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var lens=[31,28,31,30,31,30,31,31,30,31,30,31];
+  var mi=ri(r,0,11), d=ri(r,1,lens[mi]-1), add=pick(r,[7,10,14,21,28]);
+  var day=d+add, m2=mi;
+  while(day>lens[m2]){ day-=lens[m2]; m2=(m2+1)%12; }
+  return { q:'Today is '+d+' '+months[mi]+'. What date is it '+add+' days later?',
+    kind:'choice',
+    opts: shuf(r,[day+' '+months[m2], (day+1)+' '+months[m2], (day-1<1?lens[(m2+11)%12]:day-1)+' '+months[m2], day+' '+months[(m2+1)%12]]),
+    ans: day+' '+months[m2],
+    hint:months[mi]+' has '+lens[mi]+' days. Count on and roll into the next month if you run out.',
+    steps:[d+' + '+add+' = '+(d+add),
+           months[mi]+' has '+lens[mi]+' days.',
+           'So the date is '+day+' '+months[m2]+'.'] };
+}}
+
+];
+
+/* sanity: every shop should have skills */
+const SKILLS_BY_SHOP = {};
+SHOPS.forEach(function(s){ SKILLS_BY_SHOP[s.id] = SKILLS.filter(function(k){ return k.shop===s.id; }); });
+
+/* economy constants — 80 stars planned in total, 32 built so far */
+const ECON = {
+  TOTAL_STARS: 80,       // full game
+  STAR_VALUE: 10,        // pence per star  → £8.00
+  PURSE_DAILY: 10,       // pence at risk each day
+  PURSE_MAX_LOSS: 5,     // most that can be lost in one day
+  PURSE_LIFETIME: 200,   // £2.00 cap on purse earnings
+  DAILY_QUESTIONS: 20,   // gentle stop
+  MASTERY_HITS: 3,       // correct answers needed
+  MASTERY_DAYS: 2        // spread over at least this many different days
+};
+
+</script>
+<script>
+/* ============ Isabel Leyla's Number Town — engine ============ */
+(function(){
+'use strict';
+
+/* ---------- storage ---------- */
+var MEM={};
+var store={
+  get:function(k){ try{ var v=localStorage.getItem(k); return v==null?MEM[k]:v; }catch(e){ return MEM[k]; } },
+  set:function(k,v){ MEM[k]=v; try{ localStorage.setItem(k,v); }catch(e){} }
+};
+var KEY='number-town-v1';
+var S={
+  skills:{}, coins:0, savedP:0, purseP:0, paidP:0,
+  today:{ date:'', purse:ECON.PURSE_DAILY, lost:0, asked:0, banked:false },
+  ledger:[], shopsOn:{bakery:1,market:1,cafe:1,station:1},
+  lastShop:'bakery', pin:''
+};
+try{ var raw=store.get(KEY); if(raw) S=Object.assign(S, JSON.parse(raw)); }catch(e){}
+function save(){ store.set(KEY, JSON.stringify(S)); }
+
+/* ---------- helpers ---------- */
+var $=function(s,r){ return (r||document).querySelector(s); };
+var $$=function(s,r){ return Array.prototype.slice.call((r||document).querySelectorAll(s)); };
+function today(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function hash(s){ var h=2166136261; for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619);} return h>>>0; }
+function rngFrom(s){ var x=s||1; return function(){ x=(x*1664525+1013904223)%4294967296; return x/4294967296; }; }
+function P(p){ var s=p<0?'-':''; p=Math.abs(p); return s+'£'+Math.floor(p/100)+'.'+String(p%100).padStart(2,'0'); }
+function pShort(p){ return p<100 ? p+'p' : P(p); }
+function sk(id){ if(!S.skills[id]) S.skills[id]={hits:0,days:[],star:false,seen:0,wrong:0}; return S.skills[id]; }
+function rollDay(){
+  var t=today();
+  if(S.today.date!==t){
+    // bank yesterday's purse if she actually did the practice
+    if(S.today.date && !S.today.banked && S.today.asked>=10) bankPurse(true);
+    S.today={ date:t, purse:ECON.PURSE_DAILY, lost:0, asked:0, banked:false };
+    save();
+  }
+}
+function totalSavedP(){ return S.savedP + S.purseP; }
+function owedP(){ return totalSavedP() - S.paidP; }
+function starCount(){ return Object.keys(S.skills).filter(function(k){ return S.skills[k].star; }).length; }
+
+/* ---------- sounds ---------- */
+var actx=null;
+function tone(f,d,t,v){ try{
+  if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)();
+  if(actx.state==='suspended') actx.resume();
+  var o=actx.createOscillator(), g=actx.createGain();
+  o.type=t||'triangle'; o.frequency.value=f;
+  g.gain.setValueAtTime(0,actx.currentTime);
+  g.gain.linearRampToValueAtTime(v||.12,actx.currentTime+.02);
+  g.gain.exponentialRampToValueAtTime(.0001,actx.currentTime+(d||.16));
+  o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime+(d||.16)+.02);
+}catch(e){} }
+var sYes=function(){ tone(660,.11); setTimeout(function(){tone(880,.16);},85); };
+var sHmm=function(){ tone(300,.15,'sine',.07); };
+var sCoin=function(){ tone(1050,.07,'square',.05); setTimeout(function(){tone(1400,.09,'square',.05);},60); };
+var sStar=function(){ [523,659,784,1047,1319].forEach(function(f,i){ setTimeout(function(){tone(f,.24,'triangle',.12);}, i*95); }); };
+var sTick=function(){ tone(520,.05,'square',.04); };
+
+/* ============================================================
+   ART
+   ============================================================ */
+var SKIN=['#F3C99A','#E8B183','#D69A6A','#C1834F','#F7D9B8'];
+var HAIR=['#3B2A22','#6B4226','#A8632B','#2E2A3B','#7A5C3E','#4A3B5C'];
+
+function personSVG(seed, apron){
+  var r=rngFrom(hash(seed)), p=function(a){ return a[Math.floor(r()*a.length)]; };
+  var skin=p(SKIN), hair=p(HAIR), style=Math.floor(r()*4);
+  var hairPath;
+  if(style===0) hairPath='<path d="M12 24 Q30 2 48 24 Q48 14 30 10 Q12 14 12 24Z" fill="'+hair+'"/>';
+  else if(style===1) hairPath='<path d="M11 26 Q11 6 30 6 Q49 6 49 26 L45 26 Q45 14 30 14 Q15 14 15 26Z" fill="'+hair+'"/>'+
+                              '<circle cx="11" cy="30" r="7" fill="'+hair+'"/><circle cx="49" cy="30" r="7" fill="'+hair+'"/>';
+  else if(style===2) hairPath='<path d="M12 26 Q14 6 30 6 Q46 6 48 26 Q42 18 30 18 Q18 18 12 26Z" fill="'+hair+'"/>';
+  else hairPath='<path d="M13 24 Q30 4 47 24 L47 20 Q30 8 13 20Z" fill="'+hair+'"/>'+
+                '<path d="M44 22 Q54 30 50 44 L45 42 Q48 32 43 26Z" fill="'+hair+'"/>';
+  return '<svg viewBox="0 0 60 76">'+
+    '<rect x="19" y="60" width="8" height="14" rx="4" fill="#4A4256"/>'+
+    '<rect x="33" y="60" width="8" height="14" rx="4" fill="#4A4256"/>'+
+    '<path d="M14 44 Q14 34 30 34 Q46 34 46 44 L46 62 Q30 66 14 62Z" fill="'+apron+'"/>'+
+    '<path d="M23 34 L37 34 L35 46 L25 46Z" fill="#FFF6EA" opacity=".75"/>'+
+    '<circle cx="13" cy="44" r="5" fill="'+skin+'"/><circle cx="47" cy="44" r="5" fill="'+skin+'"/>'+
+    '<circle cx="30" cy="24" r="16" fill="'+skin+'"/>'+ hairPath +
+    '<circle cx="24" cy="26" r="2.3" fill="#2E2A3B"/><circle cx="36" cy="26" r="2.3" fill="#2E2A3B"/>'+
+    '<path d="M25 32 Q30 36 35 32" stroke="#2E2A3B" stroke-width="2" fill="none" stroke-linecap="round"/>'+
+    '<circle cx="20" cy="31" r="3" fill="#E88" opacity=".3"/><circle cx="40" cy="31" r="3" fill="#E88" opacity=".3"/>'+
+  '</svg>';
+}
+
+var SHOP_LOOK={
+  bakery:{ wall:'#F2B33D', roof:'#E4694A', stripe:'#FFF6EA' },
+  market:{ wall:'#6FB98F', roof:'#3E7D5E', stripe:'#FFF6EA' },
+  cafe:  { wall:'#8D6BA0', roof:'#5E4470', stripe:'#FFF6EA' },
+  station:{wall:'#5B8FB9', roof:'#38607F', stripe:'#FFF6EA' }
+};
+function buildingSVG(id, emoji){
+  var c=SHOP_LOOK[id], aw='';
+  for(var i=0;i<5;i++){
+    var col = i%2 ? c.stripe : c.roof;
+    aw += '<rect x="'+(10+i*20)+'" y="40" width="20" height="9" fill="'+col+'"/>'+
+          '<circle cx="'+(20+i*20)+'" cy="49" r="9" fill="'+col+'"/>';
+  }
+  return '<svg viewBox="0 0 120 92">'+
+    '<rect x="8" y="30" width="104" height="58" rx="7" fill="'+c.wall+'"/>'+
+    '<path d="M2 33 L60 6 L118 33Z" fill="'+c.roof+'"/>'+
+    '<rect x="20" y="62" width="26" height="26" rx="4" fill="#3A3346"/>'+
+    '<circle cx="41" cy="76" r="2" fill="'+c.stripe+'"/>'+
+    '<rect x="56" y="62" width="42" height="22" rx="4" fill="#FFF6EA"/>'+
+    '<line x1="77" y1="62" x2="77" y2="84" stroke="'+c.roof+'" stroke-width="3"/>'+
+    '<line x1="56" y1="73" x2="98" y2="73" stroke="'+c.roof+'" stroke-width="3"/>'+
+    aw +
+    '<rect x="8" y="37" width="104" height="4" fill="'+c.roof+'" opacity=".35"/>'+
+    '<circle cx="60" cy="22" r="12" fill="#FFF6EA"/>'+
+    '<text x="60" y="28" font-size="16" text-anchor="middle">'+emoji+'</text>'+
+  '</svg>';
+}
+function skylineSVG(){
+  var t='';
+  for(var i=0;i<9;i++){
+    var w=26+((i*37)%22), h=30+((i*53)%46), x=i*44-10;
+    t+='<rect x="'+x+'" y="'+(300-h)+'" width="'+w+'" height="'+h+'" rx="3" fill="#B98BA8" opacity=".35"/>';
+  }
+  return '<svg viewBox="0 0 400 300" preserveAspectRatio="none" '+
+    'style="position:absolute;bottom:0;left:0;width:100%;height:44%">'+
+    '<circle cx="330" cy="86" r="30" fill="#FFE9A8" opacity=".9"/>'+t+
+    '<path d="M0 268 Q100 250 200 266 Q300 280 400 262 L400 300 L0 300Z" fill="#EBCFA0" opacity=".6"/></svg>';
+}
+function jarSVG(fillFrac){
+  var h=Math.max(0, Math.min(1, fillFrac))*74;
+  return '<svg viewBox="0 0 120 130">'+
+    '<rect x="34" y="8" width="52" height="12" rx="5" fill="#C9BCA8"/>'+
+    '<path d="M26 26 h68 a10 10 0 0 1 10 10 v78 a10 10 0 0 1 -10 10 h-68 a10 10 0 0 1 -10 -10 v-78 a10 10 0 0 1 10 -10Z" fill="#EAF2F8" stroke="#2E2A3B" stroke-width="3.5"/>'+
+    '<clipPath id="jc"><path d="M26 26 h68 a10 10 0 0 1 10 10 v78 a10 10 0 0 1 -10 10 h-68 a10 10 0 0 1 -10 -10 v-78 a10 10 0 0 1 10 -10Z"/></clipPath>'+
+    '<g clip-path="url(#jc)"><rect x="16" y="'+(120-h)+'" width="88" height="'+h+'" fill="#F2B33D"/>'+
+    '<circle cx="42" cy="'+(124-h*0.75)+'" r="9" fill="#FFD979"/><circle cx="72" cy="'+(120-h*0.45)+'" r="8" fill="#E9A62B"/>'+
+    '<circle cx="58" cy="'+(126-h*0.95)+'" r="7" fill="#FFD979"/></g>'+
+    '<rect x="30" y="14" width="14" height="4" rx="2" fill="#fff" opacity=".6"/>'+
+  '</svg>';
+}
+function confetti(){
+  var cols=['#E4694A','#F2B33D','#6FB98F','#5B8FB9','#8D6BA0'];
+  for(var i=0;i<30;i++){ (function(i){
+    var d=document.createElement('div'); d.className='conf';
+    d.style.background=cols[i%cols.length];
+    d.style.left=(15+Math.random()*70)+'%'; d.style.top='38%';
+    document.body.appendChild(d);
+    var dx=(Math.random()-.5)*300, dy=-100-Math.random()*160, rot=Math.random()*720-360;
+    try{ d.animate([{transform:'translate(0,0) rotate(0)',opacity:1},
+      {transform:'translate('+dx+'px,'+(dy+560)+'px) rotate('+rot+'deg)',opacity:0}],
+      {duration:1300+Math.random()*700,easing:'cubic-bezier(.2,.6,.4,1)'}); }catch(e){}
+    setTimeout(function(){ d.remove(); },2100);
+  })(i); }
+}
+function flyText(txt, colour){
+  var d=document.createElement('div'); d.className='fly'; d.textContent=txt;
+  d.style.color=colour||'#6FB98F'; d.style.left='50%'; d.style.top='46%'; d.style.transform='translateX(-50%)';
+  document.body.appendChild(d);
+  try{ d.animate([{transform:'translate(-50%,0)',opacity:1},{transform:'translate(-50%,-70px)',opacity:0}],
+    {duration:1000,easing:'ease-out'}); }catch(e){}
+  setTimeout(function(){ d.remove(); },1000);
+}
+
+/* ============================================================
+   ECONOMY
+   ============================================================ */
+function ledger(kind, p, note){
+  S.ledger.push({ d:today(), k:kind, p:p, n:note });
+  if(S.ledger.length>400) S.ledger.splice(0, S.ledger.length-400);
+}
+function awardStar(id, name){
+  var k=sk(id); if(k.star) return false;
+  k.star=true; S.savedP += ECON.STAR_VALUE;
+  ledger('star', ECON.STAR_VALUE, name);
+  save(); return true;
+}
+function losePurse(reason){
+  if(S.today.lost >= ECON.PURSE_MAX_LOSS) return 0;
+  if(S.today.purse<=0) return 0;
+  S.today.purse -= 1; S.today.lost += 1; save();
+  return 1;
+}
+function bankPurse(silent){
+  if(S.today.banked) return 0;
+  var room = Math.max(0, ECON.PURSE_LIFETIME - S.purseP);
+  var add = Math.min(S.today.purse, room);
+  S.today.banked = true;
+  if(add>0){ S.purseP += add; ledger('purse', add, 'Careful work bonus'); }
+  save(); return add;
+}
+/* payday = money earned but not yet handed over */
+function paydayLines(){
+  var since = S.ledger.filter(function(e){ return true; });
+  var byDay = {};
+  since.forEach(function(e){ byDay[e.d]=(byDay[e.d]||0)+e.p; });
+  return byDay;
+}
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+function show(id){
+  $$('.screen').forEach(function(s){ s.classList.toggle('on', s.id===id); });
+  if(id==='map') renderMap();
+  if(id==='bank') renderBank();
+}
+$$('[data-back]').forEach(function(b){ b.addEventListener('click', function(){ show(b.dataset.back); }); });
+
+/* ============================================================
+   TOWN MAP
+   ============================================================ */
+function renderPurseBar(){
+  $('#pCoins').innerHTML='🪙 <b>'+S.coins+'</b>';
+  $('#pSave').innerHTML='🏦 <b>'+P(totalSavedP())+'</b>';
+  $('#pPurse').innerHTML='👛 <b>'+S.today.purse+'p</b>';
+  var sc=$('#sCoins'); if(sc) sc.innerHTML='🪙 <b>'+S.coins+'</b>';
+}
+function renderMap(){
+  rollDay(); renderPurseBar();
+  $('#skyline').innerHTML = skylineSVG();
+  var townsfolk = ['Ada','Theo','Rosa','Kit','Mila','Otis','Suri','Finn'];
+  var street = townsfolk.slice(0, 5).map(function(n,i){
+    return '<div class="walker" style="animation-delay:'+(i*0.4)+'s">'+
+      personSVG(n+starCount(), ['#E4694A','#F2B33D','#6FB98F','#5B8FB9','#8D6BA0'][i%5])+'</div>';
+  }).join('');
+  var st=$('#street'); if(st) st.innerHTML=street;
+  var left = ECON.DAILY_QUESTIONS - S.today.asked;
+  $('#welcomeLine').textContent = left>0
+    ? (S.today.asked===0 ? 'Where shall we work today?' : left+' more jobs to finish today’s shift')
+    : 'Today’s shift is done. Lovely work!';
+  var el=$('#shops'); el.innerHTML='';
+  SHOPS.filter(function(s){ return S.shopsOn[s.id]; }).forEach(function(s){
+    var mine=SKILLS_BY_SHOP[s.id], done=mine.filter(function(k){ return sk(k.id).star; }).length;
+    var dots=mine.map(function(k){ return '<i class="'+(sk(k.id).star?'on':'')+'"></i>'; }).join('');
+    var b=document.createElement('button'); b.className='shop';
+    b.innerHTML = '<div class="frontage">'+buildingSVG(s.id, s.emoji)+
+        '<div class="keeper">'+personSVG(s.keeper, SHOP_LOOK[s.id].wall)+'</div></div>'+
+      '<div class="nm">'+s.name+'</div><div class="tp">'+s.topic+'</div>'+
+      '<div class="stars">'+dots+'</div>'+
+      '<div class="tp">'+done+'/'+mine.length+' stars</div>';
+    b.addEventListener('click', function(){ tone(700,.09); openShop(s.id); });
+    el.appendChild(b);
+  });
+}
+$('#btnBank').addEventListener('click', function(){ show('bank'); });
+$('#btnPayday').addEventListener('click', function(){ show('bank'); setTimeout(function(){
+  var r=$('#paydayCard'); if(r) r.scrollIntoView({behavior:'smooth'});
+},120); });
+
+/* ============================================================
+   QUESTION FLOW
+   ============================================================ */
+var cur=null;   // {skill, q, tries, usedHint, sawSolution}
+var curShop=null;
+
+function pickSkill(shopId){
+  var mine=SKILLS_BY_SHOP[shopId];
+  var fresh=mine.filter(function(k){ return !sk(k.id).star; });
+  var starred=mine.filter(function(k){ return sk(k.id).star; });
+  // 1 in 4 goes back to a mastered skill to keep it sharp (and the purse honest)
+  if(starred.length && (!fresh.length || Math.random()<0.25))
+    return { skill: starred[Math.floor(Math.random()*starred.length)], review:true };
+  // otherwise the least-practised unstarred skill (with a little randomness)
+  fresh.sort(function(a,b){ return sk(a.id).hits - sk(b.id).hits; });
+  var pool=fresh.slice(0, Math.max(2, Math.min(3, fresh.length)));
+  return { skill: pool[Math.floor(Math.random()*pool.length)], review:false };
+}
+
+function openShop(id){
+  rollDay();
+  if(S.today.asked >= ECON.DAILY_QUESTIONS){ show('map'); shiftOver(); return; }
+  curShop=id; S.lastShop=id; save();
+  var s=SHOPS.filter(function(x){return x.id===id;})[0];
+  $('#shopName').textContent = s.name;
+  $('#shopSub').textContent = s.keeper+' · '+s.topic;
+  $('#keeperPic').innerHTML = personSVG(s.keeper, SHOP_LOOK[id].wall);
+  show('shop'); nextQuestion();
+}
+
+function nextQuestion(){
+  rollDay(); renderPurseBar();
+  if(S.today.asked >= ECON.DAILY_QUESTIONS){ shiftOver(); return; }
+  var picked=pickSkill(curShop);
+  var r=rngFrom(Math.floor(Math.random()*4294967295)+1);
+  var q;
+  try{ q=picked.skill.gen(r); }catch(e){ q=picked.skill.gen(rngFrom(12345)); }
+  cur={ skill:picked.skill, q:q, tries:0, usedHint:false, sawSolution:false, review:picked.review, typed:'' };
+  drawQuestion();
+}
+
+function drawQuestion(){
+  var q=cur.q;
+  var pics = q.svg ? '<div class="pics">'+q.svg+'</div>' : '';
+  var keeper = SHOPS.filter(function(x){ return x.id===curShop; })[0];
+  $('#shopSub').textContent = keeper.keeper+' · job '+(S.today.asked+1)+' of '+ECON.DAILY_QUESTIONS;
+  $('#qwrap').innerHTML =
+    (cur.review ? '<div class="tag">keeping it sharp ⭐</div>' : '<div class="tag">'+cur.skill.name+'</div>')+
+    '<div class="talk"><div class="speech">'+q.q+'</div>'+
+      '<div class="talkwho">'+personSVG(keeper.keeper, SHOP_LOOK[curShop].wall)+'</div></div>'+ pics +
+    (q.kind==='num' ? '<div class="abox" id="abox"></div>' : '')+
+    '<div id="helpArea"></div>';
+  if(q.kind==='num'){ drawAbox(); drawKeypad(); } else { drawChoices(); }
+}
+function drawAbox(){
+  var q=cur.q;
+  var pre = q.unit==='£' ? '£' : '';
+  var post = (q.unit && q.unit!=='£') ? '<span class="un">'+q.unit+'</span>' : '';
+  $('#abox').innerHTML = pre + '<span class="cur">'+(cur.typed||'')+'</span>' + post;
+}
+function drawKeypad(){
+  var extra = cur.q.keys==='dec' ? '.' : cur.q.keys==='frac' ? '/' : cur.q.keys==='time' ? ':' : '';
+  var rows=[['7','8','9'],['4','5','6'],['1','2','3'],[extra||'','0','⌫']];
+  var html='';
+  rows.forEach(function(rw){ rw.forEach(function(k){
+    html += k==='' ? '<button class="key dim" disabled></button>'
+                   : '<button class="key" data-k="'+k+'">'+k+'</button>';
+  });});
+  html += '<button class="key go" data-k="ok">Check it</button>';
+  $('#answerArea').className='pad'; $('#answerArea').innerHTML=html;
+  $$('#answerArea .key').forEach(function(b){
+    b.addEventListener('click', function(){
+      var k=b.dataset.k;
+      if(k==='ok'){ checkAnswer(cur.typed); return; }
+      if(k==='⌫'){ cur.typed=cur.typed.slice(0,-1); }
+      else if(cur.typed.length<8){ cur.typed+=k; }
+      sTick(); drawAbox();
+    });
+  });
+}
+function drawChoices(){
+  $('#answerArea').className='opts';
+  $('#answerArea').innerHTML = cur.q.opts.map(function(o,i){
+    return '<button class="opt" data-i="'+i+'">'+o+'</button>';
+  }).join('');
+  $$('#answerArea .opt').forEach(function(b){
+    b.addEventListener('click', function(){ checkAnswer(cur.q.opts[+b.dataset.i], b); });
+  });
+}
+
+var NUMERIC=/^-?\d*\.?\d+$/;
+function same(a,b){
+  a=String(a).trim().toLowerCase().replace(/^£/,'').replace(/\s/g,'');
+  b=String(b).trim().toLowerCase().replace(/^£/,'').replace(/\s/g,'');
+  if(a===b) return true;
+  /* times: 7:35 and 07:35 are the same clock face */
+  var ta=a.match(/^(\d{1,2}):(\d{2})$/), tb=b.match(/^(\d{1,2}):(\d{2})$/);
+  if(ta&&tb) return (+ta[1]%24)===(+tb[1]%24) && ta[2]===tb[2];
+  /* plain numbers: 4.50 and 4.5 are the same amount */
+  if(NUMERIC.test(a)&&NUMERIC.test(b)) return Math.abs(parseFloat(a)-parseFloat(b))<1e-9;
+  return false;
+}
+function isCorrect(v){
+  var q=cur.q;
+  if(same(v,q.ans)) return true;
+  return (q.alt||[]).some(function(a){ return same(v,a); });
+}
+
+function checkAnswer(v, btn){
+  if(v===''||v==null){ sHmm(); return; }
+  var q=cur.q;
+  if(isCorrect(v)) return rightAnswer(btn);
+  /* --- wrong --- */
+  cur.tries++;
+  sHmm();
+  if(btn){ btn.classList.add('bad'); btn.disabled=true; }
+  var ab=$('#abox'); if(ab){ ab.classList.remove('wrong'); void ab.offsetWidth; ab.classList.add('wrong'); }
+  cur.typed=''; if(ab) drawAbox();
+
+  if(cur.tries===1){
+    cur.usedHint=true;
+    $('#helpArea').innerHTML='<div class="helper">🤔 <b>Have another look.</b> '+q.hint+'</div>'+
+      (q.hintSvg?'<div class="pics">'+q.hintSvg+'</div>':'');
+    return;
+  }
+
+  if(cur.tries===2){
+    cur.sawSolution=true;
+    /* a second miss on something she already has a star for costs a penny of today's purse */
+    var lost=0;
+    if(cur.review && sk(cur.skill.id).star) lost = losePurse();
+    $('#helpArea').innerHTML =
+      '<div class="sol"><div class="tag plain" style="opacity:.5">how it works</div>'+
+      q.steps.map(function(s){ return '<div>'+s+'</div>'; }).join('')+
+      '<div class="ansline">Answer: '+(q.unit==='£'?'£':'')+q.ans+(q.unit&&q.unit!=='£'?' '+q.unit:'')+'</div></div>'+
+      (lost ? '<div class="helper" style="margin-top:8px">👛 You already had a star for this one — <b>1p</b> off today’s purse. Your bank is untouched.</div>' : '')+
+      '<div class="helper" style="margin-top:8px">✍️ Now put that answer in yourself — that is what makes it stick.</div>';
+    if(q.kind==='choice') $$('#answerArea .opt').forEach(function(b){ b.disabled=false; b.classList.remove('bad'); });
+    renderPurseBar();
+    return;
+  }
+
+  /* she has the solution in front of her — just nudge, no more cost */
+  if(cur.tries===4){
+    var skipBtn=document.createElement('button');
+    skipBtn.className='btn ghost sm'; skipBtn.style.marginTop='8px';
+    skipBtn.textContent='Leave this one for now →';
+    skipBtn.addEventListener('click', function(){ finishQuestion(); });
+    $('#helpArea').appendChild(skipBtn);
+  }
+}
+
+function rightAnswer(btn){
+  sYes();
+  if(btn){ btn.classList.add('good'); }
+  var ab=$('#abox'); if(ab) ab.classList.add('right');
+  var clean = (cur.tries===0);
+  var coins = clean ? 5 : (cur.sawSolution ? 1 : 2);
+  S.coins += coins; sCoin();
+  flyText('+'+coins+' 🪙', '#B8860B');
+
+  var k=sk(cur.skill.id); k.seen++;
+  var starred=false;
+  if(clean){
+    k.hits++;
+    if(k.days.indexOf(today())<0) k.days.push(today());
+    if(!k.star && k.hits>=ECON.MASTERY_HITS && k.days.length>=ECON.MASTERY_DAYS){
+      starred = awardStar(cur.skill.id, cur.skill.name);
+    }
+  }
+  save();
+  $$('#answerArea button').forEach(function(b){ b.disabled=true; });
+  if(starred){ setTimeout(function(){ starCheer(cur.skill.name); }, 420); }
+  else {
+    var msg = clean ? ['Nice one!','Spot on.','Exactly right.','That’s it!','Lovely work.'][Math.floor(Math.random()*5)]
+                    : 'Got there — that is what counts.';
+    $('#helpArea').innerHTML='<div class="helper" style="background:#E4F6EA;box-shadow:0 3px 0 #B9E2C8">✅ <b>'+msg+'</b>'+
+      (clean? '' : ' Mistakes are how it sticks.')+'</div>';
+    setTimeout(function(){ finishQuestion(true); }, 700);
+  }
+}
+
+function finishQuestion(){
+  S.today.asked++; save();
+  if(S.today.asked>=ECON.DAILY_QUESTIONS){ shiftOver(); return; }
+  nextQuestion();
+}
+
+function starCheer(name){
+  sStar(); confetti();
+  var c=$('#cheer');
+  c.innerHTML='<div style="font-size:60px">⭐</div>'+
+    '<h2 style="font-size:24px">New star!</h2>'+
+    '<div style="font-size:17px">'+name+'</div>'+
+    '<div class="reward">+10p into your bank — and it stays there for good.</div>'+
+    '<div style="font-size:15px;opacity:.7">'+starCount()+' of '+ECON.TOTAL_STARS+' stars · '+P(totalSavedP())+' of £10.00</div>'+
+    '<button class="btn sage" id="cheerGo">Keep going →</button>';
+  c.classList.add('on');
+  $('#cheerGo').addEventListener('click', function(){ c.classList.remove('on'); finishQuestion(true); });
+}
+
+function shiftOver(){
+  var banked = S.today.asked>=10 ? bankPurse() : 0;
+  var c=$('#cheer');
+  c.innerHTML='<div style="font-size:56px">🌙</div>'+
+    '<h2 style="font-size:23px">Shift finished</h2>'+
+    '<div style="font-size:16px;max-width:320px;line-height:1.45">You did '+S.today.asked+' jobs today'+
+      (S.today.lost? ' and lost '+S.today.lost+'p from the purse' : '')+'.</div>'+
+    (banked? '<div class="reward">👛 +'+banked+'p careful-work bonus banked</div>'
+           : (S.today.asked<10 ? '<div style="font-size:14px;opacity:.7">Do 10 jobs in a day to bank the purse bonus.</div>' : ''))+
+    '<div style="font-size:17px;font-weight:700">Bank: '+P(totalSavedP())+'</div>'+
+    '<div style="font-size:14px;opacity:.7;max-width:300px">Come back tomorrow — a little every day beats a lot in one go.</div>'+
+    '<button class="btn blue" id="cheerGo">See my money</button>';
+  c.classList.add('on');
+  $('#cheerGo').addEventListener('click', function(){ c.classList.remove('on'); show('bank'); });
+}
+
+/* ============================================================
+   BANK
+   ============================================================ */
+function renderBank(){
+  rollDay();
+  var tot=totalSavedP(), owe=owedP(), frac=tot/1000;
+  var stars=starCount();
+  var byDay=paydayLines();
+  var days=Object.keys(byDay).sort().reverse().slice(0,7);
+  var unpaidRows = days.map(function(d){
+    return '<div class="row"><span>'+d+'</span><span>'+pShort(byDay[d])+'</span></div>';
+  }).join('') || '<div class="muted">Nothing earned yet — go and do a job!</div>';
+
+  $('#bankwrap').innerHTML =
+    '<div class="jar">'+jarSVG(frac)+'</div>'+
+    '<div class="bigmoney">'+P(tot)+'</div>'+
+    '<div class="muted">of £10.00 · '+stars+' of '+ECON.TOTAL_STARS+' stars</div>'+
+    '<div class="meter"><i style="width:'+Math.min(100,frac*100).toFixed(1)+'%"></i></div>'+
+
+    '<div class="card"><h3>How it adds up</h3>'+
+      '<div class="row"><span>⭐ Stars earned ('+stars+' × 10p)</span><span>'+P(S.savedP)+'</span></div>'+
+      '<div class="row"><span>👛 Careful-work bonus</span><span>'+P(S.purseP)+'</span></div>'+
+      '<div class="row tot"><span>Total earned</span><span>'+P(tot)+'</span></div>'+
+      '<div class="row"><span>Already paid by Dad</span><span>−'+P(S.paidP)+'</span></div>'+
+      '<div class="row tot"><span>Waiting for payday</span><span>'+P(owe)+'</span></div>'+
+    '</div>'+
+
+    '<div class="card" id="paydayCard"><h3>🧾 Recent earnings</h3>'+unpaidRows+
+      '<div class="muted" style="margin-top:8px">Payday is on Sunday. Show this to Dad.</div></div>'+
+
+    '<div class="card"><h3>Today</h3>'+
+      '<div class="row"><span>Jobs done</span><span>'+S.today.asked+' / '+ECON.DAILY_QUESTIONS+'</span></div>'+
+      '<div class="row"><span>👛 Purse left</span><span>'+S.today.purse+'p</span></div>'+
+      '<div class="muted" style="margin-top:6px">Your bank never goes down. Only today’s purse can, and only on things you already have a star for.</div>'+
+    '</div>'+
+    '<button class="btn ghost sm" id="bankBack">← Back to town</button>';
+  $('#bankBack').addEventListener('click', function(){ show('map'); });
+}
+
+/* ============================================================
+   GROWN-UPS
+   ============================================================ */
+var unlocked=false;   /* resets every time the panel is closed */
+
+$('#btnGrown').addEventListener('click', function(){
+  $('#grownSheet').classList.add('on');
+  if(S.pin && !unlocked) renderGate('enter');
+  else if(!S.pin && !S.pinAsked){ S.pinAsked=1; save(); renderGate('set'); }
+  else renderGrown();
+});
+$('#grownSheet').addEventListener('click', function(e){
+  if(e.target===$('#grownSheet')){ $('#grownSheet').classList.remove('on'); unlocked=false; }
+});
+
+/* ---- the latch: a 4-digit PIN so only a grown-up can touch the money ---- */
+function pinHash(s){ return String(hash('nt|'+s)); }
+function renderGate(mode, first){
+  var typed='';
+  var title = mode==='enter' ? 'Grown-ups only'
+            : mode==='set'   ? 'Choose a 4-digit PIN'
+            : 'Type it once more';
+  var sub = mode==='enter' ? 'Enter your PIN to see progress and the payday total.'
+          : mode==='set'   ? 'Isabel Leyla should not know this one — it is what stops the bank being reset.'
+          : 'Just to be sure.';
+  $('#grownInner').innerHTML =
+    '<h2>'+title+'</h2><p class="muted">'+sub+'</p>'+
+    '<div class="pindots" id="pindots"></div>'+
+    '<div class="pad pinpad" id="pinpad"></div>'+
+    '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:6px">'+
+      (mode==='set' ? '<button class="btn ghost sm" id="pinSkip">Not just now</button>' : '')+
+      '<button class="btn ghost sm" id="pinClose">Close</button>'+
+    '</div>'+
+    (mode==='enter' ? '<p class="muted" style="margin-top:14px">Forgotten it? Clearing this site’s data in Chrome removes the PIN — but it also erases her progress and money, so write the total down first.</p>' : '');
+
+  function dots(){
+    $('#pindots').innerHTML = [0,1,2,3].map(function(i){
+      return '<span class="'+(i<typed.length?'on':'')+'"></span>';
+    }).join('');
+  }
+  var rows=[['7','8','9'],['4','5','6'],['1','2','3'],['','0','⌫']];
+  $('#pinpad').innerHTML = rows.map(function(rw){ return rw.map(function(k){
+    return k==='' ? '<button class="key dim" disabled></button>'
+                  : '<button class="key" data-k="'+k+'">'+k+'</button>';
+  }).join(''); }).join('');
+  dots();
+
+  $$('#pinpad .key').forEach(function(b){
+    b.addEventListener('click', function(){
+      var k=b.dataset.k;
+      if(k==='⌫') typed=typed.slice(0,-1); else if(typed.length<4) typed+=k;
+      sTick(); dots();
+      if(typed.length===4) setTimeout(function(){ submit(typed); }, 160);
+    });
+  });
+  function bad(){
+    tone(220,.2,'sine',.09);
+    var d=$('#pindots'); d.classList.remove('shakepin'); void d.offsetWidth; d.classList.add('shakepin');
+    typed=''; dots();
+  }
+  function submit(v){
+    if(mode==='enter'){
+      if(pinHash(v)===S.pin){ unlocked=true; sYes(); renderGrown(); } else bad();
+    } else if(mode==='set'){
+      renderGate('confirm', v);
+    } else {
+      if(v===first){ S.pin=pinHash(v); save(); unlocked=true; sYes(); renderGrown(); }
+      else { alert('Those two did not match — let us try again.'); renderGate('set'); }
+    }
+  }
+  var sk2=$('#pinSkip'); if(sk2) sk2.addEventListener('click', function(){ unlocked=true; renderGrown(); });
+  $('#pinClose').addEventListener('click', function(){ $('#grownSheet').classList.remove('on'); unlocked=false; });
+}
+
+function renderGrown(){
+  rollDay();
+  var rows='';
+  SHOPS.forEach(function(s){
+    rows += '<h3 style="margin-top:14px;font-size:14px">'+s.emoji+' '+s.name+'</h3>';
+    SKILLS_BY_SHOP[s.id].forEach(function(k){
+      var d=sk(k.id), pct=Math.min(100, d.hits/ECON.MASTERY_HITS*100);
+      rows += '<div class="skillrow"><span style="flex:0 0 47%;font-size:13px">'+k.name+'</span>'+
+        '<span class="bar"><i style="width:'+pct+'%"></i></span>'+
+        '<span class="st">'+(d.star?'⭐':(d.seen?d.hits+'/'+ECON.MASTERY_HITS:'·'))+'</span></div>';
+    });
+  });
+  var shaky = SKILLS.filter(function(k){ var d=sk(k.id); return d.seen>=2 && !d.star && d.hits<=1; })
+                    .map(function(k){ return k.name; }).slice(0,5);
+
+  $('#grownInner').innerHTML =
+    '<h2>Grown-ups’ corner</h2>'+
+    '<p class="muted">Everything stays on this phone. No account, no analytics, nothing sent anywhere.</p>'+
+
+    '<div class="card" style="margin-top:12px"><h3>💷 Payday</h3>'+
+      '<div class="row"><span>Total earned</span><span>'+P(totalSavedP())+'</span></div>'+
+      '<div class="row"><span>Already paid</span><span>'+P(S.paidP)+'</span></div>'+
+      '<div class="row tot"><span>You owe</span><span>'+P(owedP())+'</span></div>'+
+      '<div style="margin-top:10px"><button class="btn sage sm" id="btnPaid">Mark as paid</button></div>'+
+      '<p class="muted" style="margin-top:8px">Stars: '+starCount()+'/'+ECON.TOTAL_STARS+' × 10p = '+P(S.savedP)+
+      '. Careful-work bonus so far '+P(S.purseP)+' (capped at £2.00). Maximum total £10.00.</p>'+
+    '</div>'+
+
+    (shaky.length? '<div class="card" style="margin-top:10px"><h3>Worth a look together</h3>'+
+      '<p class="muted">'+shaky.join(' · ')+'</p></div>' : '')+
+
+    '<div class="card" style="margin-top:10px"><h3>Shops</h3>'+
+      '<div class="seg" id="shopToggles">'+SHOPS.map(function(s){
+        return '<button data-s="'+s.id+'" class="'+(S.shopsOn[s.id]?'':'off')+'">'+s.emoji+' '+s.name+'</button>';
+      }).join('')+'</div>'+
+      '<p class="muted">Turn a shop off to keep her on what school is doing this term.</p></div>'+
+
+    '<div class="card" style="margin-top:10px"><h3>Progress</h3>'+rows+'</div>'+
+
+    '<div class="card" style="margin-top:10px"><h3>Why it is built this way</h3>'+
+      '<p class="muted">A star needs '+ECON.MASTERY_HITS+' clean answers spread over at least '+ECON.MASTERY_DAYS+
+      ' different days, so money follows real learning rather than one lucky session. '+
+      'There are no timers — timed drilling is the best-documented trigger of maths anxiety at this age. '+
+      'Wrong answers never touch the bank: a first miss brings a hint, a second brings the worked solution, '+
+      'and only a mistake on an already-starred skill costs 1p of that day’s purse (max '+ECON.PURSE_MAX_LOSS+'p a day). '+
+      'The day stops after '+ECON.DAILY_QUESTIONS+' questions.</p></div>'+
+
+    '<div class="card" style="margin-top:10px"><h3>🔒 Grown-ups’ PIN</h3>'+
+      '<p class="muted">'+(S.pin
+        ? 'A PIN is set. This panel — and the reset button — stay locked without it. It keeps a curious nine-year-old out; it is a latch, not a safe.'
+        : 'No PIN yet. Set one so the bank and the progress cannot be reset without you.')+'</p>'+
+      '<div style="display:flex;gap:8px;margin-top:9px;flex-wrap:wrap">'+
+        '<button class="btn blue sm" id="btnPin">'+(S.pin?'Change PIN':'Set a PIN')+'</button>'+
+        (S.pin?'<button class="btn ghost sm" id="btnPinOff">Remove PIN</button>':'')+
+      '</div></div>'+
+
+    '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">'+
+      '<button class="btn sm" id="btnClose">Done</button>'+
+      '<button class="btn ghost sm" id="btnReset">Reset everything</button></div>';
+
+  $('#btnPin').addEventListener('click', function(){ renderGate('set'); });
+  var off=$('#btnPinOff'); if(off) off.addEventListener('click', function(){
+    if(confirm('Remove the PIN? Anyone using this phone will then be able to reset the money.')){
+      S.pin=''; save(); renderGrown();
+    }
+  });
+  $('#btnClose').addEventListener('click', function(){ $('#grownSheet').classList.remove('on'); unlocked=false; renderMap(); });
+  $('#btnPaid').addEventListener('click', function(){
+    S.paidP = totalSavedP(); save(); renderGrown();
+  });
+  $('#btnReset').addEventListener('click', function(){
+    if(confirm('Erase all progress and money?')){
+      var keepPin=S.pin;
+      S={ skills:{}, coins:0, savedP:0, purseP:0, paidP:0,
+          today:{date:'',purse:ECON.PURSE_DAILY,lost:0,asked:0,banked:false},
+          ledger:[], shopsOn:{bakery:1,market:1,cafe:1,station:1}, lastShop:'bakery', pin:keepPin };
+      rollDay(); save(); renderGrown(); renderMap();
+    }
+  });
+  $$('#shopToggles button').forEach(function(b){
+    b.addEventListener('click', function(){
+      var id=b.dataset.s, on=!S.shopsOn[id];
+      var count=SHOPS.filter(function(s){ return S.shopsOn[s.id]; }).length;
+      if(!on && count<=1) return;
+      S.shopsOn[id]=on?1:0; save(); renderGrown();
+    });
+  });
+}
+
+/* ---------- boot ---------- */
+if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
+  window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+}
+/* debug hooks — used by the automated tests */
+try{ window.__person=personSVG; window.__state=function(){return S;}; window.__cur=function(){return cur;}; }catch(e){}
+rollDay();
+renderMap();
+
+})();
+
+</script>
+</body>
+</html>
