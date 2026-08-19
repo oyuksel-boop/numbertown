@@ -1,6 +1,6 @@
 /* Offline cache for Isabel Leyla's Number Town.
    Bump CACHE after any edit so phones pick up the new version. */
-const CACHE = 'numbertown-v1';
+const CACHE = 'numbertown-v2';
 const ASSETS = [
   './',
   './index.html',
