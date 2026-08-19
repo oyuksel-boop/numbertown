@@ -4,7 +4,7 @@ A calm maths game for a pupil starting P5 in Scotland. You run four shops in a
 little town; the maths *is* the work of the shop. There are no timers and nothing
 flashes red. Learning a skill earns a star, and stars are worth real pocket money.
 
-**Play:** https://USERNAME.github.io/REPO/ *(replace once Pages is live)*
+**Play:** https://oyuksel-boop.github.io/numbertown/
 
 ## Level
 
